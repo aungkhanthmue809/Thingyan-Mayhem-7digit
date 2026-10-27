@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Thingyan Mayhem — Digit7 Jam</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Title Screen -->
+  <div id="screen-title" class="screen active">
+    <div class="panel">
+      <h1>THINGYAN<br>MAYHEM</h1>
+      <p class="subtitle">HTML Arcade Game • Digit7 Jam</p>
+      <button id="btn-play" class="btn btn-primary">PLAY</button>
+      <button id="btn-how" class="btn btn-outline">HOW TO PLAY</button>
+      <p class="footnote">Tap targets in red shirts. Avoid the rest.</p>
+    </div>
+  </div>
+
+  <!-- How to Play -->
+  <div id="screen-how" class="screen">
+    <div class="panel">
+      <h2>How to Play</h2>
+      <ol class="how-list">
+        <li>Read the mission at the top.</li>
+        <li>Tap the matching people as they walk past.</li>
+        <li>Avoid splashing the wrong people — it costs a heart.</li>
+        <li>Complete the mission before time runs out!</li>
+      </ol>
+      <button id="btn-back-menu" class="btn btn-outline">BACK</button>
+      <button id="btn-start-from-how" class="btn btn-primary">PLAY LEVEL 1</button>
+    </div>
+  </div>
+
+  <!-- Gameplay -->
+  <div id="screen-game" class="screen">
+    <div class="hud">
+      <div class="hud-box hearts">
+        <span class="hud-label">Hearts</span>
+        <div class="hud-value" id="hud-hearts">❤❤❤</div>
+      </div>
+      <div class="hud-box timer">
+        <span class="hud-label">Time</span>
+        <div class="hud-value" id="hud-timer">60</div>
+      </div>
+      <div class="hud-box score">
+        <span class="hud-label">Score</span>
+        <div class="hud-value" id="hud-score">0</div>
+      </div>
+      <div class="hud-box combo" id="hud-combo" style="display:none;">
+        <span class="hud-label">Combo</span>
+        <div class="hud-value">x<span id="combo-val">1</span></div>
+      </div>
+    </div>
+
+    <div class="mission-bar">
+      <div class="mission-text">
+        <span id="mission-desc">Splash <b class="target-word">6 children in red shirts</b></span>
+        <span class="mission-progress" id="mission-progress">0 / 6</span>
+      </div>
+      <div class="mission-meter">
+        <div class="mission-fill" id="mission-fill"></div>
+      </div>
+    </div>
+
+    <canvas id="game-canvas"></canvas>
+
+    <div id="btn-pause-wrap" class="pause-wrap">
+      <button id="btn-pause" class="btn pause-btn">⏸</button>
+    </div>
+  </div>
+
+  <!-- Pause -->
+  <div id="screen-pause" class="screen overlay-screen">
+    <div class="panel">
+      <h2>Paused</h2>
+      <button id="btn-resume" class="btn btn-primary">RESUME</button>
+      <button id="btn-restart-pause" class="btn btn-outline">RESTART LEVEL</button>
+      <button id="btn-menu-pause" class="btn btn-outline">MAIN MENU</button>
+    </div>
+  </div>
+
+  <!-- Level Clear -->
+  <div id="screen-clear" class="screen overlay-screen">
+    <div class="panel">
+      <h2 id="clear-title">LEVEL CLEARED!</h2>
+      <p id="clear-msg">Mission complete.</p>
+      <div class="results">
+        <div><span>Score</span> <b id="res-score">0</b></div>
+        <div><span>Hearts Left</span> <b id="res-hearts">3</b></div>
+        <div><span>Time Left</span> <b id="res-time">0</b></div>
+      </div>
+      <button id="btn-next" class="btn btn-primary">NEXT LEVEL</button>
+      <button id="btn-retry-clear" class="btn btn-outline">RETRY</button>
+      <button id="btn-menu-clear" class="btn btn-outline">MAIN MENU</button>
+    </div>
+  </div>
+
+  <!-- Game Over -->
+  <div id="screen-gameover" class="screen overlay-screen">
+    <div class="panel">
+      <h2 id="go-title">GAME OVER</h2>
+      <p id="go-msg">You ran out of time or hearts.</p>
+      <div class="results">
+        <div><span>Final Score</span> <b id="res-final-score">0</b></div>
+      </div>
+      <button id="btn-retry-go" class="btn btn-primary">TRY AGAIN</button>
+      <button id="btn-menu-go" class="btn btn-outline">MAIN MENU</button>
+    </div>
+  </div>
+
+  <script src="js/characters.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
