@@ -396,6 +396,13 @@ function loop(t) {
   ctx.fillStyle = '#c7b299';
   ctx.fillRect(0, H * 0.82, W, 5);
 
+  // Draw thrower character (player) on stage
+  try {
+    drawThrower(ctx, W / 2, H * 0.82 - 35, 1.0);
+  } catch (e) {
+    // ignore if function not available
+  }
+
   // Draw water drops in flight (behind pedestrians)
   for (const d of waterDrops) {
     if (d.arrived) continue;
