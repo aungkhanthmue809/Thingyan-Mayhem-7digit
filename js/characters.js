@@ -33,11 +33,6 @@ function loadTemplateImage(templateId, src) {
   }
 }
 
-// Try to load images for all templates
-for (const t of CHAR_TEMPLATES) {
-  loadTemplateImage(t.id, `assets/character_${t.id}.png`);
-}
-
 const CHAR_TEMPLATES = [
   // id, role, label, shirt color, accessory color, speed, size
   { id: 'child_red',   role: 'target',  label: 'Child in red',   shirt: '#e63946', acc: '#ffb703', speed: 2.0, scale: 0.85 },
@@ -46,6 +41,11 @@ const CHAR_TEMPLATES = [
   { id: 'auntie',      role: 'hazard',  label: 'Furious Auntie', shirt: '#d00000', acc: '#ffb703', speed: 1.4, scale: 1.05 },
   { id: 'monk',        role: 'hazard',  label: 'Monk',           shirt: '#fb8500', acc: '#fb8500', speed: 1.6, scale: 1.0 },
 ];
+
+// Try to load images for all templates
+for (const t of CHAR_TEMPLATES) {
+  loadTemplateImage(t.id, `assets/character_${t.id}.png`);
+}
 
 function pickTemplate() {
   // Weighted: more targets than hazards/distractors for a fair feel
