@@ -302,6 +302,115 @@ function drawWaterTrail(ctx, drops) {
   }
 }
 
+// Draw the player/thrower character (can be replaced with an image later)
+const playerImg = new Image();
+let playerImgLoaded = false;
+playerImg.src = 'assets/player.png';
+playerImg.onload = () => { playerImgLoaded = true; };
+playerImg.onerror = () => { playerImgLoaded = false; };
+
+function drawPlayer(ctx, x, y) {
+  const s = 1.0;
+  ctx.save();
+  ctx.translate(x, y);
+
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.12)';
+  ctx.beginPath();
+  ctx.ellipse(0, 38 * s, 22 * s, 6 * s, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  if (playerImgLoaded) {
+    const imgW = 80 * s;
+    const imgH = 110 * s;
+    ctx.drawImage(playerImg, -imgW / 2, -imgH / 2 + 8 * s, imgW, imgH);
+  } else {
+    // Legs
+    ctx.strokeStyle = '#6b4226';
+    ctx.lineWidth = 6 * s;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-8 * s, 24 * s);
+    ctx.lineTo(-8 * s, 38 * s);
+    ctx.moveTo(8 * s, 24 * s);
+    ctx.lineTo(8 * s, 38 * s);
+    ctx.stroke();
+
+    // Feet
+    ctx.fillStyle = '#4a3728';
+    ctx.beginPath();
+    ctx.arc(-8 * s, 42 * s, 7 * s, 0, Math.PI * 2);
+    ctx.arc(8 * s, 42 * s, 7 * s, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Body (shirt)
+    ctx.fillStyle = '#2a9d8f';
+    const bodyW = 38 * s;
+    const bodyH = 30 * s;
+    if (ctx.roundRect) {
+      ctx.beginPath();
+      ctx.roundRect(-bodyW / 2, -6 * s, bodyW, bodyH, 8 * s);
+      ctx.fill();
+    } else {
+      ctx.fillRect(-bodyW / 2, -6 * s, bodyW, bodyH);
+    }
+
+    // Head
+    ctx.fillStyle = '#f4a261';
+    ctx.beginPath();
+    ctx.arc(0, -24 * s, 16 * s, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Hair
+    ctx.fillStyle = '#3d2b1f';
+    ctx.beginPath();
+    ctx.arc(0, -28 * s, 15 * s, -0.1 * Math.PI, 1.1 * Math.PI);
+    ctx.fill();
+
+    // Headband
+    ctx.fillStyle = '#ffb703';
+    ctx.beginPath();
+    ctx.ellipse(0, -34 * s, 16 * s, 6 * s, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#e76f51';
+    ctx.fillRect(-16 * s, -37 * s, 32 * s, 6 * s);
+
+    // Face
+    ctx.fillStyle = '#222';
+    ctx.beginPath();
+    ctx.arc(-5 * s, -26 * s, 2 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(5 * s, -26 * s, 2 * s, 0, Math.PI * 2);
+    ctx.fill();
+    // Smile
+    ctx.strokeStyle = '#222';
+    ctx.lineWidth = 2 * s;
+    ctx.beginPath();
+    ctx.arc(0, -24 * s, 6 * s, 0.1 * Math.PI, 0.9 * Math.PI);
+    ctx.stroke();
+
+    // Throwing arm with bucket
+    ctx.strokeStyle = '#f4a261';
+    ctx.lineWidth = 6 * s;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(bodyW / 2 - 2 * s, 4 * s);
+    ctx.lineTo(bodyW / 2 + 16 * s, -6 * s);
+    ctx.stroke();
+
+    ctx.fillStyle = '#457b9d';
+    ctx.beginPath();
+    ctx.ellipse(bodyW / 2 + 20 * s, -8 * s, 10 * s, 8 * s, 0.3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#1d3557';
+    ctx.lineWidth = 2 * s;
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
 function drawThrower(ctx, x, y, scale = 1, aimAngle = 0) {
   const s = scale;
   const bob = Math.sin(performance.now() / 400) * 2 * s;
