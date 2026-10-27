@@ -127,15 +127,15 @@ function startLevel(config) {
   UI.showScreen('screen-game');
   UI.setHud(hearts, timeLeft, score, combo);
   UI.setMission(mission.description, mission.completed, mission.required);
-  spawnPedestrian();
+  spawnPedestrian('boy_walk'); // guaranteed first appearance so you always see him
   requestAnimationFrame(loop);
 }
 
-function spawnPedestrian() {
+function spawnPedestrian(forceTemplateId) {
   // Limit how many people are on screen at once (keeps it readable & fair)
-  if (pedestrians.length >= 4) return;
+  if (pedestrians.length >= 4) return false;
 
-  const t = pickTemplate();
+  const t = forceTemplateId ? pickTemplateById(forceTemplateId) : pickTemplate();
   const dir = Math.random() < 0.5 ? 1 : -1;
   const x = dir === 1 ? -50 : W + 50;
   const y = H * 0.32 + Math.random() * (H * 0.42);
@@ -222,7 +222,7 @@ function resolveSplash(p, isTarget) {
 
     if (combo > 1) playSound('combo');
 
-    addSplash(p.x, p.y, p.template.shirt, true);
+    addSplash(p.x, p.y, p.template.drop || p.template.shirt, true);
     UI.floatText(gameScreen, p.x, p.y - 40, `+${points} ${combo > 1 ? `x${combo}` : ''}`, '#2a9d8f');
 
     UI.setHud(hearts, timeLeft, score, combo);
@@ -238,7 +238,7 @@ function resolveSplash(p, isTarget) {
     score = Math.max(0, score - 25);
     playSound('mistake');
 
-    addSplash(p.x, p.y, p.template.shirt, false);
+    addSplash(p.x, p.y, p.template.drop || p.template.shirt, false);
     UI.floatText(gameScreen, p.x, p.y - 40, '-Heart', '#e63946');
 
     UI.setHud(hearts, timeLeft, score, combo);
@@ -334,7 +334,7 @@ function loop(t) {
       }
     }
     if (p.splashing) {
-      p.y += 1;
+      p.y += 2; // sink down: wet character drops toward the ground
       p.radius *= 0.94;
       if (p.radius < 3) {
         pedestrians = pedestrians.filter((x) => x !== p);

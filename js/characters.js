@@ -33,6 +33,40 @@ function loadTemplateImage(templateId, src) {
   }
 }
 
+// Multi-frame walk cycle support — a template may own an array of walk frames
+const templateWalkFrames = {};   // templateId -> [Image, Image, ...]
+const templateWalkFramesLoaded = {}; // templateId -> boolean
+
+// Single "wet/soaked" reaction frame per template
+const templateWetFrames = {};    // templateId -> Image
+const templateWetFramesLoaded = {}; // templateId -> boolean
+
+function loadTemplateWetFrame(templateId, src) {
+  if (templateWetFrames[templateId]) return;
+  const img = new Image();
+  img.onload = () => { templateWetFramesLoaded[templateId] = true; };
+  img.onerror = () => { templateWetFramesLoaded[templateId] = false; };
+  img.src = src;
+  templateWetFrames[templateId] = img;
+}
+
+function loadTemplateWalkFrames(templateId, sources) {
+  if (templateWalkFrames[templateId]) return;
+  const frames = [];
+  let loadedCount = 0;
+  sources.forEach((src) => {
+    const img = new Image();
+    img.onload = () => {
+      loadedCount++;
+      if (loadedCount === sources.length) templateWalkFramesLoaded[templateId] = true;
+    };
+    img.onerror = () => { templateWalkFramesLoaded[templateId] = false; };
+    img.src = src;
+    frames.push(img);
+  });
+  templateWalkFrames[templateId] = frames;
+}
+
 const CHAR_TEMPLATES = [
   // id, role, label, shirt color, accessory color, speed, size
   { id: 'child_red',   role: 'target',  label: 'Child in red',   shirt: '#e63946', acc: '#ffb703', speed: 2.0, scale: 0.85 },
@@ -40,6 +74,8 @@ const CHAR_TEMPLATES = [
   { id: 'person_green',role: 'distractor', label: 'Person in green',shirt: '#2a9d8f', acc: '#ffb703', speed: 1.7, scale: 1.0 },
   { id: 'auntie',      role: 'hazard',  label: 'Furious Auntie', shirt: '#d00000', acc: '#ffb703', speed: 1.4, scale: 1.05 },
   { id: 'monk',        role: 'hazard',  label: 'Monk',           shirt: '#fb8500', acc: '#fb8500', speed: 1.6, scale: 1.0 },
+  // New walking boy (green splash tee) — extra physical/distractor
+  { id: 'boy_walk',    role: 'distractor', label: 'Walking Boy', shirt: '#3faf4c', acc: '#45a3e5', speed: 1.8, scale: 0.95, drop: '#45a3e5' },
 ];
 
 // Try to load images for all templates
@@ -47,9 +83,14 @@ for (const t of CHAR_TEMPLATES) {
   loadTemplateImage(t.id, `assets/character_${t.id}.png`);
 }
 
+// Load walk frames for the walking boy template
+loadTemplateWalkFrames('boy_walk', ['assets/boy/walk_1.png', 'assets/boy/walk_2.png']);
+// Load wet (soaked) reaction frame for the walking boy
+loadTemplateWetFrame('boy_walk', 'assets/boy/wet.png');
+
 function pickTemplate() {
   // Weighted: more targets than hazards/distractors for a fair feel
-  const weights = [4, 2, 2, 1, 1];
+  const weights = [4, 2, 2, 1, 1, 3];
   let total = 0;
   for (const w of weights) total += w;
   let r = Math.random() * total;
@@ -58,6 +99,10 @@ function pickTemplate() {
     if (r <= 0) return CHAR_TEMPLATES[i];
   }
   return CHAR_TEMPLATES[0];
+}
+
+function pickTemplateById(id) {
+  return CHAR_TEMPLATES.find((t) => t.id === id) || CHAR_TEMPLATES[0];
 }
 
 function shadeColor(hex, amt) {
@@ -87,10 +132,39 @@ function drawCharacter(ctx, p) {
   ctx.ellipse(0, r + 12 * s, r * 0.9, 6 * s, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Try per-template image first, then generic custom image
+  // Wet/soaked reaction: hold size, sink down, fade out (nothing else drawn)
+  const wetFrame = templateWetFramesLoaded[t.id] ? templateWetFrames[t.id] : null;
+  if (p.splashing && wetFrame) {
+    // Fade factor follows the splash shrink progress (radius: 30*scale -> ~3)
+    const fade = Math.max(0, Math.min(1, (p.radius - 3) / (30 * t.scale - 3)));
+    const imgH = 110 * s; // constant size — no shrinking, just sinks & fades
+    const imgW = imgH * (wetFrame.width / wetFrame.height);
+    ctx.save();
+    ctx.globalAlpha = fade;
+    if (p.dir === -1) ctx.scale(-1, 1);
+    ctx.drawImage(wetFrame, -imgW / 2, -imgH / 2 + 10 * s, imgW, imgH);
+    ctx.restore();
+    ctx.restore(); // also restore the outer save() from the top of drawCharacter
+    return; // skip all other rendering so nothing overlaps him
+  }
+
+  // Walk-cycle frames take priority, then per-template image, then generic
   const tmplImg = templateImages[t.id];
   const tmplLoaded = templateImageLoaded[t.id];
-  if (tmplLoaded && tmplImg) {
+  const walkFramesArr = (templateWalkFramesLoaded[t.id] && !p.splashing) ? templateWalkFrames[t.id] : null;
+  if (walkFramesArr) {
+    // Cycle frames driven by the pedestrian's own phase (keeps each person unique)
+    const frame = walkFramesArr[Math.floor(p.phase / 2.5) % walkFramesArr.length];
+    const imgH = 110 * s;
+    const imgW = imgH * (frame.width / frame.height); // preserve aspect
+    if (p.dir === -1) {
+      ctx.scale(-1, 1);
+    }
+    ctx.drawImage(frame, -imgW / 2, -imgH / 2 + 10 * s, imgW, imgH);
+    if (p.dir === -1) {
+      ctx.scale(-1, 1);
+    }
+  } else if (tmplLoaded && tmplImg) {
     if (p.dir === -1) {
       ctx.scale(-1, 1);
     }
@@ -302,17 +376,42 @@ function drawWaterTrail(ctx, drops) {
   }
 }
 
-// Draw the player/thrower character (can be replaced with an image later)
+// Draw the player/thrower character using the walk cycle frames
 const playerImg = new Image();
 let playerImgLoaded = false;
 playerImg.src = 'assets/player.png';
 playerImg.onload = () => { playerImgLoaded = true; };
 playerImg.onerror = () => { playerImgLoaded = false; };
 
+// Walk cycle frames (2-frame walk animation)
+const walkFrames = [];
+let walkFramesLoaded = false;
+(function loadWalkFrames() {
+  let loadedCount = 0;
+  ['assets/boy/walk_1.png', 'assets/boy/walk_2.png'].forEach((src) => {
+    const img = new Image();
+    img.onload = () => {
+      loadedCount++;
+      if (loadedCount === 2) walkFramesLoaded = true;
+    };
+    img.onerror = () => {};
+    img.src = src;
+    walkFrames.push(img);
+  });
+})();
+
+// Sequential frame index for a smooth 1-1-2-2 cycle (classic 2-frame ping-pong feel)
+function getWalkFrameIndex() {
+  const FRAME_MS = 180; // ms per frame
+  const t = Math.floor(performance.now() / FRAME_MS) % 4;
+  return (t === 0 || t === 1) ? 0 : 1; // frame1, frame1, frame2, frame2
+}
+
 function drawPlayer(ctx, x, y) {
   const s = 1.0;
+  const walkBob = Math.sin(performance.now() / 180) * 2 * s; // slight bob in sync with steps
   ctx.save();
-  ctx.translate(x, y);
+  ctx.translate(x, y + walkBob);
 
   // Shadow
   ctx.fillStyle = 'rgba(0,0,0,0.12)';
@@ -320,7 +419,13 @@ function drawPlayer(ctx, x, y) {
   ctx.ellipse(0, 38 * s, 22 * s, 6 * s, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  if (playerImgLoaded) {
+  if (walkFramesLoaded) {
+    // Cycle between walk_1 / walk_2 for the walk animation
+    const frame = walkFrames[getWalkFrameIndex()];
+    const imgH = 140 * s;
+    const imgW = imgH * (frame.width / frame.height); // keep original aspect (~367:682)
+    ctx.drawImage(frame, -imgW / 2, -imgH / 2 + 8 * s, imgW, imgH);
+  } else if (playerImgLoaded) {
     const imgW = 80 * s;
     const imgH = 110 * s;
     ctx.drawImage(playerImg, -imgW / 2, -imgH / 2 + 8 * s, imgW, imgH);
