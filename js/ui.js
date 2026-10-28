@@ -28,8 +28,13 @@ const UI = {
   },
 
   setHud(hearts, timer, score, combo) {
-    const h = '❤'.repeat(hearts) + '🖤'.repeat(Math.max(0, 3 - hearts));
-    this.els.hudHearts.textContent = h;
+    let h = '';
+    for (let i = 0; i < 3; i++) {
+      h += i < hearts
+        ? '<img class="life-icon" src="assets/life/life.png" alt="life">'
+        : '<img class="life-icon life-lost" src="assets/life/life.png" alt="lost life">';
+    }
+    this.els.hudHearts.innerHTML = h;
     this.els.hudTimer.textContent = Math.max(0, Math.ceil(timer));
     this.els.hudScore.textContent = score;
     if (combo > 1) {
@@ -49,7 +54,7 @@ const UI = {
 
   showClear(score, hearts, timeLeft) {
     this.els.resScore.textContent = score;
-    this.els.resHearts.textContent = hearts;
+    this.els.resHearts.innerHTML = '<img class="life-icon" src="assets/life/life.png" alt="life">'.repeat(hearts);
     this.els.resTime.textContent = Math.max(0, Math.ceil(timeLeft));
     this.showScreen('screen-clear');
   },
