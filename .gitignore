@@ -1,3 +1,7 @@
 # Unused working assets
 assets/irrelevant/
 assets/buffer/
+
+# Build artifacts
+deploy/
+thingyan-mayhem-build.zip

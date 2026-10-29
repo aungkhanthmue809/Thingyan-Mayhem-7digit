@@ -12,15 +12,16 @@
 - Keyboard: Spacebar as a dev fallback.
 
 ## Performance Targets
-- Initial load: < 10 seconds (single HTML file, no external assets).
+- Initial load: < 10 seconds (static HTML + JS + local image assets, no build step, no network dependencies).
 - Frame rate: 60 fps target on phone-sized viewport.
 - No crashes or freezes during normal play.
 
-## Known Limitations (MVP)
+## Known Limitations (Level 1 MVP)
 - Only Level 1 ("First Splash") is implemented.
-- Art is programmatic placeholder; replace with illustrated sprites.
-- No sound files (synthesized tones only).
+- Character art is AI-generated (Google Gemini); see `AI_USE_DECLARATION.md` and `ASSET_CREDIT_LIST.md`.
+- Audio is code-synthesized (Web Audio API); no audio files are included.
 - Endless Mode, Levels 2–6, pause, and level select are planned but not yet built.
+- `assets/irrelevant/` (unused AI drafts) and `assets/buffer/` (working screenshots) are excluded from the shipped build.
 
 ## Submission Version
 - Playable URL, ZIP, demo video, README, and repository all identify the same submitted version: **Level 1 MVP**.

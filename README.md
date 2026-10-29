@@ -87,7 +87,7 @@ Thingyan Mayhem is a playful, fast-tapping arcade game inspired by the Thingyan 
 
 ## 🎨 Art & Audio
 
-Character sprites are loaded from `assets/<character>/walk_1.png` and `walk_2.png` (e.g. `assets/man_red/walk_1.png`). The kid also has a `wet.png` reaction frame.
+Character sprites are loaded from `assets/<character>/walk_1.png` and `walk_2.png` (e.g. `assets/man_red/walk_1.png`). Wet-state reaction art (`wet.png`) now exists for kid, aunt, busy_woman, woman, man_red, and man_blue (`assets/<character>/wet.png`).
 
 ### Two block background images
 
@@ -115,8 +115,10 @@ All other visuals (water drops, splashes, player gun) are drawn with Canvas 2D.
 
 Audio uses the Web Audio API for simple synthesized tones (no external audio files).
 
+- **Art:** AI-generated sprites (Google Gemini), per `AI_USE_DECLARATION.md` and `ASSET_CREDIT_LIST.md`. Stored under `assets/` and loaded at runtime by `js/characters.js`.
+
 ---
 
 ## 📜 License
 
-Created for the Digit7 Jam 2026. All original code and design by the submitting team.
+Created for the Digit7 Jam 2026. Game design and direction by the submitting team; code and visual assets AI-generated per `AI_USE_DECLARATION.md`.
