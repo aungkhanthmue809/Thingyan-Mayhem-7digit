@@ -97,6 +97,10 @@ Drop a portrait background image at **`assets/background.jpg`** (recommended siz
 - If the file is missing, the game automatically falls back to the drawn gradient + platform colors.
 - To use a different filename or format (e.g. `.png`), change `BACKGROUND_IMAGE_SRC` near the top of `js/game.js`.
 
+### Player stage
+
+The player stands on a raised Thingyan-style dais drawn in code (maroon + gold), so they are on a festival stage instead of the road in the background photo. Adjust its height/width in `getStageMetrics()` and its styling in `drawFestivalStage()` in `js/game.js`.
+
 All other visuals (water drops, splashes, player gun) are drawn with Canvas 2D.
 
 Audio uses the Web Audio API for simple synthesized tones (no external audio files).

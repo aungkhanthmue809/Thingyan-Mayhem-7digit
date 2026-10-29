@@ -96,6 +96,67 @@ function drawCoverImage(image, w, h) {
   ctx.drawImage(image, (w - dw) / 2, (h - dh) / 2, dw, dh);
 }
 
+// ---------- Festival stage (pandal) the player stands on ----------
+// The background photo is a road, so we draw a raised Thingyan-style dais
+// on top of it and stand the player there (maroon + gold festival colours).
+function getStageMetrics() {
+  const topY = H - 96;                        // top surface of the dais
+  const width = Math.min(W * 0.8, 340);       // keep it readable on phones
+  return { topY, width, frontH: H - topY };
+}
+
+function drawFestivalStage() {
+  const { topY, width, frontH } = getStageMetrics();
+  const cx = W / 2;
+  const half = width / 2;
+
+  ctx.save();
+
+  // Soft shadow cast on the road beneath the dais
+  ctx.fillStyle = 'rgba(0,0,0,0.22)';
+  ctx.beginPath();
+  ctx.ellipse(cx, H - 4, half * 1.05, 13, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Front face of the platform
+  const faceGrad = ctx.createLinearGradient(0, topY, 0, H);
+  faceGrad.addColorStop(0, '#a83c3c');
+  faceGrad.addColorStop(1, '#6b2020');
+  ctx.fillStyle = faceGrad;
+  ctx.fillRect(cx - half, topY, width, frontH);
+
+  // Decorative gold diamonds along the front
+  ctx.fillStyle = 'rgba(240,207,107,0.5)';
+  const step = 36;
+  for (let x = cx - half + 22; x < cx + half - 12; x += step) {
+    ctx.beginPath();
+    ctx.moveTo(x, topY + 28);
+    ctx.lineTo(x + 9, topY + 42);
+    ctx.lineTo(x, topY + 56);
+    ctx.lineTo(x - 9, topY + 42);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // Gold top rim (raised-platform look)
+  ctx.fillStyle = '#f0cf6b';
+  ctx.beginPath();
+  ctx.ellipse(cx, topY, half, 13, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#b8891f';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  // Thin shadow line where the top surface meets the front face
+  ctx.strokeStyle = 'rgba(90,26,26,0.55)';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.ellipse(cx, topY + 6, half, 9, 0, 0, Math.PI);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
 // ---------- Audio ----------
 function playSound(type) {
   try {
@@ -200,9 +261,9 @@ function spawnPedestrian(forceTemplateId) {
 }
 
 function addWaterDrop(tx, ty) {
-  // Start from the water gun's nozzle (bottom center of the stage)
+  // Start from the water gun's nozzle, just above the festival stage
   const sx = W / 2;
-  const sy = H - 100;
+  const sy = getStageMetrics().topY - 90;
   const dx = tx - sx;
   const dy = ty - sy;
   const dist = Math.hypot(dx, dy);
@@ -455,17 +516,6 @@ function loop(t) {
     ctx.fillRect(0, H * 0.82, W, 5);
   }
 
-  // Draw player/thrower character
-  try {
-    if (typeof drawPlayer === 'function') {
-      drawPlayer(ctx, W / 2, H - 52); // anchored to the bottom of the play field
-    } else if (typeof drawThrower === 'function') {
-      drawThrower(ctx, W / 2, H * 0.82 - 35, 1.0);
-    }
-  } catch (e) {
-    // ignore
-  }
-
   // Draw water drops in flight (behind pedestrians)
   for (const d of waterDrops) {
     if (d.arrived) continue;
@@ -473,9 +523,25 @@ function loop(t) {
     drawWaterDrop(ctx, d.x, d.y, 10, angle);
   }
 
-  // Draw pedestrians
+  // Draw pedestrians on the road (behind the stage)
   for (const p of pedestrians) {
     drawCharacter(ctx, p);
+  }
+
+  // Festival stage the player stands on (drawn over the background photo,
+  // and over the crowd so low-walking people pass behind it)
+  drawFestivalStage();
+
+  // Draw player/thrower character standing on the stage
+  try {
+    const { topY } = getStageMetrics();
+    if (typeof drawPlayer === 'function') {
+      drawPlayer(ctx, W / 2, topY - 44); // feet/shadow rest on the dais surface
+    } else if (typeof drawThrower === 'function') {
+      drawThrower(ctx, W / 2, topY - 35, 1.0);
+    }
+  } catch (e) {
+    // ignore
   }
 
   // Draw splash particles
