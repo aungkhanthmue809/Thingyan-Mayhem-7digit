@@ -96,63 +96,37 @@ function drawCoverImage(image, w, h) {
   ctx.drawImage(image, (w - dw) / 2, (h - dh) / 2, dw, dh);
 }
 
-// ---------- Festival stage (pandal) the player stands on ----------
-// The background photo is a road, so we draw a raised Thingyan-style dais
-// on top of it and stand the player there (maroon + gold festival colours).
-function getStageMetrics() {
-  const topY = H - 96;                        // top surface of the dais
-  const width = Math.min(W * 0.8, 340);       // keep it readable on phones
-  return { topY, width, frontH: H - topY };
+// ---------- Layout: walking block vs player block ----------
+// The playfield is split into two blocks:
+//   • top block    — pedestrians walk here, over the background photo
+//   • bottom block — the player stands here, visually separated
+// The background image still shows through both blocks.
+const PLAYER_ZONE_MAX = 150;    // px — tallest the bottom block gets
+const PLAYER_ZONE_RATIO = 0.24; // ...or 24% of the canvas on short screens
+
+function getPlayerZoneTop() {
+  return H - Math.min(PLAYER_ZONE_MAX, H * PLAYER_ZONE_RATIO);
 }
 
-function drawFestivalStage() {
-  const { topY, width, frontH } = getStageMetrics();
-  const cx = W / 2;
-  const half = width / 2;
+// Player position: near the bottom of its block ("a bit down")
+function getPlayerY() {
+  return H - 64;
+}
 
+function drawPlayerZone() {
+  const top = getPlayerZoneTop();
   ctx.save();
 
-  // Soft shadow cast on the road beneath the dais
-  ctx.fillStyle = 'rgba(0,0,0,0.22)';
-  ctx.beginPath();
-  ctx.ellipse(cx, H - 4, half * 1.05, 13, 0, 0, Math.PI * 2);
-  ctx.fill();
+  // Subtle tint so the bottom block reads as a separate area, while the
+  // background photo is still visible underneath the player.
+  ctx.fillStyle = 'rgba(15, 25, 35, 0.16)';
+  ctx.fillRect(0, top, W, H - top);
 
-  // Front face of the platform
-  const faceGrad = ctx.createLinearGradient(0, topY, 0, H);
-  faceGrad.addColorStop(0, '#a83c3c');
-  faceGrad.addColorStop(1, '#6b2020');
-  ctx.fillStyle = faceGrad;
-  ctx.fillRect(cx - half, topY, width, frontH);
-
-  // Decorative gold diamonds along the front
-  ctx.fillStyle = 'rgba(240,207,107,0.5)';
-  const step = 36;
-  for (let x = cx - half + 22; x < cx + half - 12; x += step) {
-    ctx.beginPath();
-    ctx.moveTo(x, topY + 28);
-    ctx.lineTo(x + 9, topY + 42);
-    ctx.lineTo(x, topY + 56);
-    ctx.lineTo(x - 9, topY + 42);
-    ctx.closePath();
-    ctx.fill();
-  }
-
-  // Gold top rim (raised-platform look)
-  ctx.fillStyle = '#f0cf6b';
-  ctx.beginPath();
-  ctx.ellipse(cx, topY, half, 13, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = '#b8891f';
-  ctx.lineWidth = 3;
-  ctx.stroke();
-
-  // Thin shadow line where the top surface meets the front face
-  ctx.strokeStyle = 'rgba(90,26,26,0.55)';
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.ellipse(cx, topY + 6, half, 9, 0, 0, Math.PI);
-  ctx.stroke();
+  // Divider between the two blocks
+  ctx.fillStyle = 'rgba(240, 207, 107, 0.9)';
+  ctx.fillRect(0, top, W, 3);
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.28)';
+  ctx.fillRect(0, top + 3, W, 2);
 
   ctx.restore();
 }
@@ -242,7 +216,10 @@ function spawnPedestrian(forceTemplateId) {
   const t = forceTemplateId ? pickTemplateById(forceTemplateId) : pickTemplate();
   const dir = Math.random() < 0.5 ? 1 : -1;
   const x = dir === 1 ? -50 : W + 50;
-  const y = H * 0.32 + Math.random() * (H * 0.42);
+  // Keep pedestrians inside the top block so they never overlap the player block
+  const walkTop = H * 0.30;
+  const walkBottom = Math.max(walkTop + 40, getPlayerZoneTop() - 60);
+  const y = walkTop + Math.random() * (walkBottom - walkTop);
   pedestrians.push({
     x: x,
     y: y,
@@ -261,9 +238,9 @@ function spawnPedestrian(forceTemplateId) {
 }
 
 function addWaterDrop(tx, ty) {
-  // Start from the water gun's nozzle, just above the festival stage
+  // Start from the water gun's nozzle, in the player block
   const sx = W / 2;
-  const sy = getStageMetrics().topY - 90;
+  const sy = getPlayerY() - 50;
   const dx = tx - sx;
   const dy = ty - sy;
   const dist = Math.hypot(dx, dy);
@@ -516,6 +493,10 @@ function loop(t) {
     ctx.fillRect(0, H * 0.82, W, 5);
   }
 
+  // Bottom player block: separate area from the walking crowd,
+  // with the background image still visible underneath.
+  drawPlayerZone();
+
   // Draw water drops in flight (behind pedestrians)
   for (const d of waterDrops) {
     if (d.arrived) continue;
@@ -523,22 +504,17 @@ function loop(t) {
     drawWaterDrop(ctx, d.x, d.y, 10, angle);
   }
 
-  // Draw pedestrians on the road (behind the stage)
+  // Draw pedestrians in the top block (they never enter the player block)
   for (const p of pedestrians) {
     drawCharacter(ctx, p);
   }
 
-  // Festival stage the player stands on (drawn over the background photo,
-  // and over the crowd so low-walking people pass behind it)
-  drawFestivalStage();
-
-  // Draw player/thrower character standing on the stage
+  // Draw player/thrower character in the bottom block
   try {
-    const { topY } = getStageMetrics();
     if (typeof drawPlayer === 'function') {
-      drawPlayer(ctx, W / 2, topY - 44); // feet/shadow rest on the dais surface
+      drawPlayer(ctx, W / 2, getPlayerY());
     } else if (typeof drawThrower === 'function') {
-      drawThrower(ctx, W / 2, topY - 35, 1.0);
+      drawThrower(ctx, W / 2, getPlayerY(), 1.0);
     }
   } catch (e) {
     // ignore
