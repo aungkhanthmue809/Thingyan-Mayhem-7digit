@@ -89,22 +89,27 @@ Thingyan Mayhem is a playful, fast-tapping arcade game inspired by the Thingyan 
 
 Character sprites are loaded from `assets/<character>/walk_1.png` and `walk_2.png` (e.g. `assets/man_red/walk_1.png`). The kid also has a `wet.png` reaction frame.
 
-### Adding a stage/background image
+### Two block background images
 
-Drop a portrait background image at **`assets/background.jpg`** (recommended size ~420 × 844, or any 9:16-ish portrait ratio). It is scaled to "cover" the play area and centered, so it will not stretch.
+The playfield has two separate background image slots — one per block:
 
-- `.jfif` / `.jpeg` files are just JPEGs — rename or copy them to `background.jpg` (or change `BACKGROUND_IMAGE_SRC` to point at your file).
-- If the file is missing, the game automatically falls back to the drawn gradient + platform colors.
-- To use a different filename or format (e.g. `.png`), change `BACKGROUND_IMAGE_SRC` near the top of `js/game.js`.
+| Block | File to add | Recommended format |
+|-------|-------------|--------------------|
+| **Top** (people walking) | `assets/background-top.jpg` | Portrait **9:16** — e.g. `720 × 1280` or `1080 × 1920` |
+| **Bottom** (player) | `assets/background-bottom.jpg` | Wide strip **~2.6:1** — e.g. `780 × 300` or `1040 × 400` |
+
+Each image is scaled to "cover" its block and centred, so it never stretches. Match the aspect ratio and keep the important part centred so cropping is not noticeable.
+
+- `.jfif` / `.jpeg` files are just JPEGs — rename or copy them to the names above.
+- If a block image is missing, the game falls back to `assets/background.jpg`, then to the drawn colours.
+- To use `.png` or different names, edit `BACKGROUND_TOP_SRC` / `BACKGROUND_BOTTOM_SRC` near the top of `js/game.js`.
 
 ### Player / walking areas
 
-The playfield is split into two blocks so the player never overlaps the walking crowd:
+- **Top block** — pedestrians walk here; their spawn heights are clamped so they never enter the player block.
+- **Bottom block** — the player stands here, separated by a gold divider and a soft shadow.
 
-- **Top block** — pedestrians walk here over the background photo.
-- **Bottom block** — the player stands here, separated by a divider and a subtle tint (the background image still shows through).
-
-Tune the layout in `js/game.js` with `getPlayerZoneTop()` (block boundary), `getPlayerY()` (player height), and `drawPlayerZone()` (divider/tint). Pedestrian spawn heights are clamped to the top block in `spawnPedestrian()`.
+Tune the layout in `js/game.js` with `getPlayerZoneTop()` (block boundary), `getPlayerY()` (player height), and `drawPlayerZone()` (divider/shadow).
 
 All other visuals (water drops, splashes, player gun) are drawn with Canvas 2D.
 

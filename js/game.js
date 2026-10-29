@@ -74,26 +74,38 @@ function resizeCanvas() {
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
-// ---------- Stage background image ----------
-// Drop your stage/background art at assets/background.jpg (see README → Art & Audio).
-// Recommended: a portrait image, e.g. 420x844 (or any 9:16-ish size).
-// It is scaled to "cover" the play area and centered, so it never stretches.
-const BACKGROUND_IMAGE_SRC = 'assets/background.jpg';
-const backgroundImg = new Image();
-let backgroundImgLoaded = false;
-backgroundImg.onload = () => { backgroundImgLoaded = true; };
-backgroundImg.onerror = () => { backgroundImgLoaded = false; };
-backgroundImg.src = BACKGROUND_IMAGE_SRC;
+// ---------- Block background images ----------
+// Two separate backgrounds, one per block (see README → Art & Audio):
+//   assets/background-top.jpg    — top block (people walking)
+//   assets/background-bottom.jpg — bottom block (player)
+// If either is missing, the single assets/background.jpg is used as a fallback;
+// if that is missing too, the drawn colours are used.
+const BACKGROUND_TOP_SRC = 'assets/background-top.jpg';
+const BACKGROUND_BOTTOM_SRC = 'assets/background-bottom.jpg';
+const BACKGROUND_FALLBACK_SRC = 'assets/background.jpg';
 
-// Draw an image so it covers the whole canvas without distorting (like CSS cover)
-function drawCoverImage(image, w, h) {
+function loadBackgroundImage(src) {
+  const img = new Image();
+  const state = { img: img, loaded: false };
+  img.onload = () => { state.loaded = true; };
+  img.onerror = () => { state.loaded = false; };
+  img.src = src;
+  return state;
+}
+
+const backgroundTop = loadBackgroundImage(BACKGROUND_TOP_SRC);
+const backgroundBottom = loadBackgroundImage(BACKGROUND_BOTTOM_SRC);
+const backgroundFallback = loadBackgroundImage(BACKGROUND_FALLBACK_SRC);
+
+// Draw an image so it covers a rectangle without distorting (like CSS cover)
+function drawCoverImage(image, dx, dy, dw, dh) {
   const iw = image.width;
   const ih = image.height;
   if (!iw || !ih) return;
-  const scale = Math.max(w / iw, h / ih);
-  const dw = iw * scale;
-  const dh = ih * scale;
-  ctx.drawImage(image, (w - dw) / 2, (h - dh) / 2, dw, dh);
+  const scale = Math.max(dw / iw, dh / ih);
+  const w = iw * scale;
+  const h = ih * scale;
+  ctx.drawImage(image, dx + (dw - w) / 2, dy + (dh - h) / 2, w, h);
 }
 
 // ---------- Layout: walking block vs player block ----------
@@ -117,16 +129,16 @@ function drawPlayerZone() {
   const top = getPlayerZoneTop();
   ctx.save();
 
-  // Subtle tint so the bottom block reads as a separate area, while the
-  // background photo is still visible underneath the player.
-  ctx.fillStyle = 'rgba(15, 25, 35, 0.16)';
-  ctx.fillRect(0, top, W, H - top);
+  // Soft shadow under the divider so the two blocks read as separate layers
+  const shadow = ctx.createLinearGradient(0, top, 0, top + 20);
+  shadow.addColorStop(0, 'rgba(0, 0, 0, 0.30)');
+  shadow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = shadow;
+  ctx.fillRect(0, top, W, 20);
 
-  // Divider between the two blocks
-  ctx.fillStyle = 'rgba(240, 207, 107, 0.9)';
+  // Gold divider line between the two blocks
+  ctx.fillStyle = 'rgba(240, 207, 107, 0.95)';
   ctx.fillRect(0, top, W, 3);
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.28)';
-  ctx.fillRect(0, top + 3, W, 2);
 
   ctx.restore();
 }
@@ -476,25 +488,45 @@ function loop(t) {
   // ---------- Draw ----------
   ctx.clearRect(0, 0, W, H);
 
-  // Stage background — custom image if provided, otherwise the drawn fallback
-  if (backgroundImgLoaded) {
-    drawCoverImage(backgroundImg, W, H);
+  const zoneTop = getPlayerZoneTop();
+
+  // ---- Top block background (people walking) ----
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, 0, W, zoneTop);
+  ctx.clip();
+  if (backgroundTop.loaded) {
+    drawCoverImage(backgroundTop.img, 0, 0, W, zoneTop);
+  } else if (backgroundFallback.loaded) {
+    drawCoverImage(backgroundFallback.img, 0, 0, W, zoneTop);
   } else {
-    const grad = ctx.createLinearGradient(0, 0, W, H);
+    const grad = ctx.createLinearGradient(0, 0, W, zoneTop);
     grad.addColorStop(0, '#fdf3c7');
     grad.addColorStop(1, '#e8e2d3');
     ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, W, H);
-
-    // Stage platform
-    ctx.fillStyle = '#d9c49a';
-    ctx.fillRect(0, H * 0.82, W, H * 0.18);
-    ctx.fillStyle = '#c7b299';
-    ctx.fillRect(0, H * 0.82, W, 5);
+    ctx.fillRect(0, 0, W, zoneTop);
   }
+  ctx.restore();
 
-  // Bottom player block: separate area from the walking crowd,
-  // with the background image still visible underneath.
+  // ---- Bottom block background (player) ----
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, zoneTop, W, H - zoneTop);
+  ctx.clip();
+  if (backgroundBottom.loaded) {
+    drawCoverImage(backgroundBottom.img, 0, zoneTop, W, H - zoneTop);
+  } else if (backgroundFallback.loaded) {
+    drawCoverImage(backgroundFallback.img, 0, 0, W, H);
+  } else {
+    const grad = ctx.createLinearGradient(0, zoneTop, 0, H);
+    grad.addColorStop(0, '#d9c49a');
+    grad.addColorStop(1, '#c7b299');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, zoneTop, W, H - zoneTop);
+  }
+  ctx.restore();
+
+  // Divider / shadow between the two blocks
   drawPlayerZone();
 
   // Draw water drops in flight (behind pedestrians)
