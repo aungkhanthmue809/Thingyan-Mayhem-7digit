@@ -17,9 +17,10 @@ const LEVEL_1 = {
   objectives: [
     {
       id: 'red_children',
-      description: 'Splash <b class="target-word">6 children in red shirts</b>',
-      targetType: 'child_red',
-      shirtColor: '#e63946',
+      // "targetType" can be a single id or a list; the description is built
+      // automatically from the first target's goalPlural, so it always matches
+      // the character (e.g. "Splash 6 men in red shirts") — never ambiguous.
+      targetType: ['man_red'],
       required: 6,
       completed: 0,
     },
@@ -48,15 +49,27 @@ let spawnTimer = 0;
 let animFrame = null;
 
 // ---------- Resize / Canvas ----------
+// Blueprint requires usable play at 360x640 (mobile) and 1280x720 (desktop).
+// The screen fills the window via CSS; the canvas takes the space left
+// below the HUD + mission bar so nothing is ever clipped.
 function resizeCanvas() {
-  const maxW = Math.min(window.innerWidth, 500);
-  const maxH = Math.min(window.innerHeight, 900);
+  // Don't pin the screen to a fixed size — CSS (inset: 0) handles it
+  gameScreen.style.width = '';
+  gameScreen.style.height = '';
+
+  // Width: portrait column (mobile-first per blueprint; narrow strip on desktop)
+  const maxW = Math.min(window.innerWidth, 420);
+
+  // Height: remaining space under the HUD + mission bar, clamped so the
+  // playfield never exceeds the blueprint's 844px reference height
+  // (canvas offsetTop measures everything stacked above it)
+  const available = gameScreen.clientHeight - canvas.offsetTop - 12;
+  const maxH = Math.max(320, Math.min(available, 844));
+
   canvas.width = maxW;
   canvas.height = maxH;
   W = canvas.width;
   H = canvas.height;
-  gameScreen.style.width = `${maxW}px`;
-  gameScreen.style.height = `${maxH}px`;
 }
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
@@ -120,22 +133,30 @@ function startLevel(config) {
   splashes = [];
   waterDrops = [];
   mission = { ...config.objectives[0], completed: 0 };
+  const firstTarget = Array.isArray(mission.targetType) ? mission.targetType[0] : mission.targetType;
+  const targetTemplate = pickTemplateById(firstTarget);
+  mission.description = `Splash <b class="target-word">${mission.required} ${targetTemplate.goalPlural}</b>`;
+  // Auto-built avoid-hint from the people who cost a life (kept in sync with resolveSplash)
+  const penaltyIds = ['busy_woman', 'aunt'];
+  const avoidText = penaltyIds.map((id) => pickTemplateById(id).label).join(' & ');
+  mission.description += ` &nbsp;•&nbsp; avoid the <b class="avoid-word">${avoidText}</b>`;
   last = performance.now();
   timeAcc = 0;
   spawnTimer = 25;
   state = 'playing';
   UI.showScreen('screen-game');
+  resizeCanvas(); // re-measure now that the screen is visible (HUD/canvas offsets are real)
   UI.setHud(hearts, timeLeft, score, combo);
   UI.setMission(mission.description, mission.completed, mission.required);
-  spawnPedestrian();
+  spawnPedestrian('man_red'); // guaranteed first appearance so you always see him
   requestAnimationFrame(loop);
 }
 
-function spawnPedestrian() {
+function spawnPedestrian(forceTemplateId) {
   // Limit how many people are on screen at once (keeps it readable & fair)
-  if (pedestrians.length >= 4) return;
+  if (pedestrians.length >= 4) return false;
 
-  const t = pickTemplate();
+  const t = forceTemplateId ? pickTemplateById(forceTemplateId) : pickTemplate();
   const dir = Math.random() < 0.5 ? 1 : -1;
   const x = dir === 1 ? -50 : W + 50;
   const y = H * 0.32 + Math.random() * (H * 0.42);
@@ -157,9 +178,9 @@ function spawnPedestrian() {
 }
 
 function addWaterDrop(tx, ty) {
-  // Start from player bucket position
-  const sx = W / 2 + 20;
-  const sy = H * 0.82 - 40;
+  // Start from the water gun's nozzle (bottom center of the stage)
+  const sx = W / 2;
+  const sy = H - 100;
   const dx = tx - sx;
   const dy = ty - sy;
   const dist = Math.hypot(dx, dy);
@@ -175,6 +196,7 @@ function addWaterDrop(tx, ty) {
     arrived: false,
   });
   playSound('splash'); // water throw sound
+  triggerShot(dx, dy); // gun kicks back AND swivels to face the shot direction
 }
 
 function resolveSplashAt(tx, ty) {
@@ -196,7 +218,8 @@ function resolveSplashAt(tx, ty) {
   }
 
   if (hit) {
-    const isTarget = hit.template.id === mission.targetType;
+    const targetTypes = Array.isArray(mission.targetType) ? mission.targetType : [mission.targetType];
+    const isTarget = targetTypes.includes(hit.template.id);
     resolveSplash(hit, isTarget);
   } else {
     UI.floatText(gameScreen, tx, ty - 30, 'Miss', '#888');
@@ -222,7 +245,7 @@ function resolveSplash(p, isTarget) {
 
     if (combo > 1) playSound('combo');
 
-    addSplash(p.x, p.y, p.template.shirt, true);
+    addSplash(p.x, p.y, p.template.drop || p.template.shirt, true);
     UI.floatText(gameScreen, p.x, p.y - 40, `+${points} ${combo > 1 ? `x${combo}` : ''}`, '#2a9d8f');
 
     UI.setHud(hearts, timeLeft, score, combo);
@@ -232,20 +255,30 @@ function resolveSplash(p, isTarget) {
       endLevel(true);
     }
   } else {
-    hearts--;
-    combo = 0;
-    lastComboTime = 0;
-    score = Math.max(0, score - 25);
-    playSound('mistake');
+    const penaltyTargetIds = ['busy_woman', 'aunt']; // only these people cost a life
+    const costHeart = penaltyTargetIds.includes(p.template.id);
 
-    addSplash(p.x, p.y, p.template.shirt, false);
-    UI.floatText(gameScreen, p.x, p.y - 40, '-Heart', '#e63946');
+    if (costHeart) {
+      hearts--;
+      combo = 0;
+      lastComboTime = 0;
+      score = Math.max(0, score - 25);
+      playSound('mistake');
 
-    UI.setHud(hearts, timeLeft, score, combo);
+      UI.floatText(gameScreen, p.x, p.y - 40, '-Life', '#e63946');
 
-    if (hearts <= 0) {
-      endLevel(false, 'You ran out of hearts!');
+      UI.setHud(hearts, timeLeft, score, combo);
+
+      if (hearts <= 0) {
+        endLevel(false, 'You hit the wrong person!');
+
+        return;
+      }
     }
+    // Non-goal, non-penalty people (e.g. men/women/kids who aren't the goal):
+    // nothing gained, nothing lost — the splash simply disappears.
+
+    addSplash(p.x, p.y, p.template.drop || p.template.shirt, false);
   }
 
   setTimeout(() => {
@@ -334,7 +367,7 @@ function loop(t) {
       }
     }
     if (p.splashing) {
-      p.y += 1;
+      p.y += 2; // sink down: wet character drops toward the ground
       p.radius *= 0.94;
       if (p.radius < 3) {
         pedestrians = pedestrians.filter((x) => x !== p);
@@ -399,7 +432,7 @@ function loop(t) {
   // Draw player/thrower character
   try {
     if (typeof drawPlayer === 'function') {
-      drawPlayer(ctx, W / 2, H * 0.82 - 32);
+      drawPlayer(ctx, W / 2, H - 52); // anchored to the bottom of the play field
     } else if (typeof drawThrower === 'function') {
       drawThrower(ctx, W / 2, H * 0.82 - 35, 1.0);
     }

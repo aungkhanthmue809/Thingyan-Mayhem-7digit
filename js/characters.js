@@ -33,23 +33,66 @@ function loadTemplateImage(templateId, src) {
   }
 }
 
+// Multi-frame walk cycle support — a template may own an array of walk frames
+const templateWalkFrames = {};   // templateId -> [Image, Image, ...]
+const templateWalkFramesLoaded = {}; // templateId -> boolean
+
+// Single "wet/soaked" reaction frame per template
+const templateWetFrames = {};    // templateId -> Image
+const templateWetFramesLoaded = {}; // templateId -> boolean
+
+function loadTemplateWetFrame(templateId, src) {
+  if (templateWetFrames[templateId]) return;
+  const img = new Image();
+  img.onload = () => { templateWetFramesLoaded[templateId] = true; };
+  img.onerror = () => { templateWetFramesLoaded[templateId] = false; };
+  img.src = src;
+  templateWetFrames[templateId] = img;
+}
+
+function loadTemplateWalkFrames(templateId, sources) {
+  if (templateWalkFrames[templateId]) return;
+  const frames = [];
+  let loadedCount = 0;
+  sources.forEach((src) => {
+    const img = new Image();
+    img.onload = () => {
+      loadedCount++;
+      if (loadedCount === sources.length) templateWalkFramesLoaded[templateId] = true;
+    };
+    img.onerror = () => { templateWalkFramesLoaded[templateId] = false; };
+    img.src = src;
+    frames.push(img);
+  });
+  templateWalkFrames[templateId] = frames;
+}
+
 const CHAR_TEMPLATES = [
-  // id, role, label, shirt color, accessory color, speed, size
-  { id: 'child_red',   role: 'target',  label: 'Child in red',   shirt: '#e63946', acc: '#ffb703', speed: 2.0, scale: 0.85 },
-  { id: 'child_blue',  role: 'distractor', label: 'Child in blue', shirt: '#457b9d', acc: '#ffb703', speed: 1.9, scale: 0.85 },
-  { id: 'person_green',role: 'distractor', label: 'Person in green',shirt: '#2a9d8f', acc: '#ffb703', speed: 1.7, scale: 1.0 },
-  { id: 'auntie',      role: 'hazard',  label: 'Furious Auntie', shirt: '#d00000', acc: '#ffb703', speed: 1.4, scale: 1.05 },
-  { id: 'monk',        role: 'hazard',  label: 'Monk',           shirt: '#fb8500', acc: '#fb8500', speed: 1.6, scale: 1.0 },
+  // id = exact folder name under assets/. roles: target / distractor / hazard
+  // goal / goalPlural = how the mission text names this character when it's the target
+  { id: 'aunt',       role: 'distractor', label: 'Aunt',       goal: 'aunt in a maroon top',        goalPlural: 'aunts in maroon tops',   shirt: '#8e3b3b', acc: '#c9c9c9', speed: 1.4, scale: 1.05 },
+  { id: 'busy_woman', role: 'distractor', label: 'Busy Woman', goal: 'busy woman with her phone',   goalPlural: 'busy women with phones', shirt: '#b59a7f', acc: '#8d6e55', speed: 1.9, scale: 0.95 },
+  { id: 'man_blue',   role: 'distractor', label: 'Man Blue',   goal: 'man in a blue shirt',         goalPlural: 'men in blue shirts',     shirt: '#5aa7d4', acc: '#e0b53c', speed: 1.7, scale: 1.0 },
+  { id: 'man_red',    role: 'target',     label: 'Man Red',    goal: 'man in a red shirt',          goalPlural: 'men in red shirts',      shirt: '#c0392b', acc: '#5d4037', speed: 2.0, scale: 0.95 },
+  { id: 'woman',      role: 'distractor', label: 'Woman',      goal: 'woman in pink',               goalPlural: 'women in pink',          shirt: '#c2478f', acc: '#e8a0d0', speed: 2.0, scale: 0.95 },
+  { id: 'kid',        role: 'distractor', label: 'Kid',        goal: 'kid in the green splash tee', goalPlural: 'kids in green tees',     shirt: '#3faf4c', acc: '#45a3e5', speed: 1.8, scale: 0.95, drop: '#45a3e5' },
 ];
 
-// Try to load images for all templates
-for (const t of CHAR_TEMPLATES) {
-  loadTemplateImage(t.id, `assets/character_${t.id}.png`);
-}
+// Load 2-frame walk cycles for every illustrated character (folder name = character id)
+loadTemplateWalkFrames('aunt',       ['assets/aunt/walk_1.png',       'assets/aunt/walk_2.png']);
+loadTemplateWalkFrames('busy_woman', ['assets/busy_woman/walk_1.png', 'assets/busy_woman/walk_2.png']);
+loadTemplateWalkFrames('man_blue',   ['assets/man_blue/walk_1.png',   'assets/man_blue/walk_2.png']);
+loadTemplateWalkFrames('man_red',    ['assets/man_red/walk_1.png',    'assets/man_red/walk_2.png']);
+loadTemplateWalkFrames('woman',      ['assets/woman/walk_1.png',      'assets/woman/walk_2.png']);
+
+// Load walk frames for the kid template
+loadTemplateWalkFrames('kid', ['assets/kid/walk_1.png', 'assets/kid/walk_2.png']);
+// Load wet (soaked) reaction frame for the kid
+loadTemplateWetFrame('kid', 'assets/kid/wet.png');
 
 function pickTemplate() {
   // Weighted: more targets than hazards/distractors for a fair feel
-  const weights = [4, 2, 2, 1, 1];
+  const weights = [4, 2, 2, 2, 2, 3];
   let total = 0;
   for (const w of weights) total += w;
   let r = Math.random() * total;
@@ -58,6 +101,10 @@ function pickTemplate() {
     if (r <= 0) return CHAR_TEMPLATES[i];
   }
   return CHAR_TEMPLATES[0];
+}
+
+function pickTemplateById(id) {
+  return CHAR_TEMPLATES.find((t) => t.id === id) || CHAR_TEMPLATES[0];
 }
 
 function shadeColor(hex, amt) {
@@ -87,10 +134,45 @@ function drawCharacter(ctx, p) {
   ctx.ellipse(0, r + 12 * s, r * 0.9, 6 * s, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Try per-template image first, then generic custom image
+  // Wet/soaked reaction:
+  //  - has wet image  -> draw the wet frame (constant size, sinks & fades out)
+  //  - no wet image   -> the character simply disappears; the water splash
+  //                      animation drawn separately covers the spot
+  const wetFrame = templateWetFramesLoaded[t.id] ? templateWetFrames[t.id] : null;
+  if (p.splashing) {
+    if (wetFrame) {
+      // Fade factor follows the splash shrink progress (radius: 30*scale -> ~3)
+      const fade = Math.max(0, Math.min(1, (p.radius - 3) / (30 * t.scale - 3)));
+      const imgH = 110 * s; // constant size — no shrinking, just sinks & fades
+      const imgW = imgH * (wetFrame.width / wetFrame.height);
+      ctx.save();
+      ctx.globalAlpha = fade;
+      if (p.dir === -1) ctx.scale(-1, 1);
+      ctx.drawImage(wetFrame, -imgW / 2, -imgH / 2 + 10 * s, imgW, imgH);
+      ctx.restore();
+    }
+    // Skip all other rendering whether or not a wet frame was drawn
+    ctx.restore();
+    return;
+  }
+
+  // Walk-cycle frames take priority, then per-template image, then generic
   const tmplImg = templateImages[t.id];
   const tmplLoaded = templateImageLoaded[t.id];
-  if (tmplLoaded && tmplImg) {
+  const walkFramesArr = (templateWalkFramesLoaded[t.id] && !p.splashing) ? templateWalkFrames[t.id] : null;
+  if (walkFramesArr) {
+    // Cycle frames driven by the pedestrian's own phase (keeps each person unique)
+    const frame = walkFramesArr[Math.floor(p.phase / 2.5) % walkFramesArr.length];
+    const imgH = 110 * s;
+    const imgW = imgH * (frame.width / frame.height); // preserve aspect
+    if (p.dir === -1) {
+      ctx.scale(-1, 1);
+    }
+    ctx.drawImage(frame, -imgW / 2, -imgH / 2 + 10 * s, imgW, imgH);
+    if (p.dir === -1) {
+      ctx.scale(-1, 1);
+    }
+  } else if (tmplLoaded && tmplImg) {
     if (p.dir === -1) {
       ctx.scale(-1, 1);
     }
@@ -202,23 +284,6 @@ function drawCharacter(ctx, p) {
     }
   }
 
-  // Role badge (small colored dot under feet)
-  const badgeColor = t.role === 'target' ? '#2a9d8f' : t.role === 'hazard' ? '#e63946' : '#457b9d';
-  ctx.fillStyle = badgeColor;
-  ctx.beginPath();
-  ctx.arc(0, r + 34 * s, 5 * s, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Splash / dead tint
-  if (p.splashing) {
-    ctx.globalAlpha = 0.5;
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.arc(0, -r * 0.35, r * 0.52, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.globalAlpha = 1;
-  }
-
   ctx.restore();
 }
 
@@ -314,109 +379,96 @@ function drawWaterTrail(ctx, drops) {
   }
 }
 
-// Draw the player/thrower character (can be replaced with an image later)
+// Draw the player/thrower character using the walk cycle frames
 const playerImg = new Image();
 let playerImgLoaded = false;
 playerImg.src = 'assets/player.png';
 playerImg.onload = () => { playerImgLoaded = true; };
 playerImg.onerror = () => { playerImgLoaded = false; };
 
-function drawPlayer(ctx, x, y) {
-  const s = 1.0;
-  ctx.save();
-  ctx.translate(x, y);
+// Walk cycle frames (2-frame walk animation)
+const walkFrames = [];
+let walkFramesLoaded = false;
+(function loadWalkFrames() {
+  let loadedCount = 0;
+  ['assets/kid/walk_1.png', 'assets/kid/walk_2.png'].forEach((src) => {
+    const img = new Image();
+    img.onload = () => {
+      loadedCount++;
+      if (loadedCount === 2) walkFramesLoaded = true;
+    };
+    img.onerror = () => {};
+    img.src = src;
+    walkFrames.push(img);
+  });
+})();
 
-  // Shadow
+// Sequential frame index for a smooth 1-1-2-2 cycle (classic 2-frame ping-pong feel)
+function getWalkFrameIndex() {
+  const FRAME_MS = 180; // ms per frame
+  const t = Math.floor(performance.now() / FRAME_MS) % 4;
+  return (t === 0 || t === 1) ? 0 : 1; // frame1, frame1, frame2, frame2
+}
+
+// Player's water gun ("Hydro-Blast 5000") image
+const gunImg = new Image();
+let gunImgLoaded = false;
+gunImg.onload = () => { gunImgLoaded = true; };
+gunImg.onerror = () => { gunImgLoaded = false; };
+gunImg.src = 'assets/player/gun.png';
+
+// Recoil: brief "kick" when a shot is fired — the gun springs up, then settles
+const RECOIL_MS = 220; // total recoil animation length
+let recoilStart = -9999;
+
+// Gun tilt: the weapon rotates to face the direction of the latest shot
+let gunAngle = 0;
+let gunAngleTarget = 0;
+
+function triggerShot(dx, dy) {
+  recoilStart = performance.now();
+  // Rotate the barrel toward the shot direction (up = 0), clamped ±0.5 rad
+  gunAngleTarget = Math.max(-0.5, Math.min(0.5, Math.atan2(dx, -dy)));
+}
+
+// Vertical offset (px) for recoil: rises quickly, falls back down, settles
+function getRecoilOffset() {
+  const k = (performance.now() - recoilStart) / RECOIL_MS;
+  if (k < 0 || k >= 1) return 0;
+  return Math.sin(k * Math.PI) * -7; // negative = up first, then back down
+}
+
+function drawPlayer(ctx, x, y) {
+  const recoil = getRecoilOffset();
+  // Ease the gun toward its aimed direction (frames add a small step each draw)
+  gunAngle += (gunAngleTarget - gunAngle) * 0.2;
+
+  ctx.save();
+  ctx.translate(x, y + recoil);
+
+  // Shadow (stays on the ground even while the gun kicks/rotates)
   ctx.fillStyle = 'rgba(0,0,0,0.12)';
   ctx.beginPath();
-  ctx.ellipse(0, 38 * s, 22 * s, 6 * s, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, 44, 26, 6, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  if (playerImgLoaded) {
-    const imgW = 80 * s;
-    const imgH = 110 * s;
-    ctx.drawImage(playerImg, -imgW / 2, -imgH / 2 + 8 * s, imgW, imgH);
+  if (gunImgLoaded) {
+    const imgH = 92; // smaller gun so it doesn't dominate the play area
+    const imgW = imgH * (gunImg.width / gunImg.height);
+    // Rotate around the gun's base so the weapon swivels toward the aim
+    ctx.save();
+    ctx.translate(0, 42);
+    ctx.rotate(gunAngle);
+    ctx.drawImage(gunImg, -imgW / 2, -imgH, imgW, imgH);
+    ctx.restore();
   } else {
-    // Legs
-    ctx.strokeStyle = '#6b4226';
-    ctx.lineWidth = 6 * s;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(-8 * s, 24 * s);
-    ctx.lineTo(-8 * s, 38 * s);
-    ctx.moveTo(8 * s, 24 * s);
-    ctx.lineTo(8 * s, 38 * s);
-    ctx.stroke();
-
-    // Feet
-    ctx.fillStyle = '#4a3728';
-    ctx.beginPath();
-    ctx.arc(-8 * s, 42 * s, 7 * s, 0, Math.PI * 2);
-    ctx.arc(8 * s, 42 * s, 7 * s, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Body (shirt)
-    ctx.fillStyle = '#2a9d8f';
-    const bodyW = 38 * s;
-    const bodyH = 30 * s;
-    if (ctx.roundRect) {
-      ctx.beginPath();
-      ctx.roundRect(-bodyW / 2, -6 * s, bodyW, bodyH, 8 * s);
-      ctx.fill();
-    } else {
-      ctx.fillRect(-bodyW / 2, -6 * s, bodyW, bodyH);
-    }
-
-    // Head
-    ctx.fillStyle = '#f4a261';
-    ctx.beginPath();
-    ctx.arc(0, -24 * s, 16 * s, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Hair
-    ctx.fillStyle = '#3d2b1f';
-    ctx.beginPath();
-    ctx.arc(0, -28 * s, 15 * s, -0.1 * Math.PI, 1.1 * Math.PI);
-    ctx.fill();
-
-    // Headband
-    ctx.fillStyle = '#ffb703';
-    ctx.beginPath();
-    ctx.ellipse(0, -34 * s, 16 * s, 6 * s, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#e76f51';
-    ctx.fillRect(-16 * s, -37 * s, 32 * s, 6 * s);
-
-    // Face
-    ctx.fillStyle = '#222';
-    ctx.beginPath();
-    ctx.arc(-5 * s, -26 * s, 2 * s, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(5 * s, -26 * s, 2 * s, 0, Math.PI * 2);
-    ctx.fill();
-    // Smile
-    ctx.strokeStyle = '#222';
-    ctx.lineWidth = 2 * s;
-    ctx.beginPath();
-    ctx.arc(0, -24 * s, 6 * s, 0.1 * Math.PI, 0.9 * Math.PI);
-    ctx.stroke();
-
-    // Throwing arm with bucket
-    ctx.strokeStyle = '#f4a261';
-    ctx.lineWidth = 6 * s;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(bodyW / 2 - 2 * s, 4 * s);
-    ctx.lineTo(bodyW / 2 + 16 * s, -6 * s);
-    ctx.stroke();
-
+    // Fallback placeholder if the gun image is missing
     ctx.fillStyle = '#457b9d';
     ctx.beginPath();
-    ctx.ellipse(bodyW / 2 + 20 * s, -8 * s, 10 * s, 8 * s, 0.3, 0, Math.PI * 2);
+    ctx.ellipse(-6, -4, 16, 12, 0.3, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = '#1d3557';
-    ctx.lineWidth = 2 * s;
+    ctx.lineWidth = 3;
     ctx.stroke();
   }
 

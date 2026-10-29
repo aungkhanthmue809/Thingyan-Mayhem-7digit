@@ -26,7 +26,7 @@
       <ol class="how-list">
         <li>Read the mission at the top.</li>
         <li>Tap the matching people as they walk past.</li>
-        <li>Avoid splashing the wrong people — it costs a heart.</li>
+        <li>Splashing <b>Busy Women &amp; Aunts</b> costs a life (3 lives, then game over).</li>
         <li>Complete the mission before time runs out!</li>
       </ol>
       <button id="btn-back-menu" class="btn btn-outline">BACK</button>
@@ -38,8 +38,12 @@
   <div id="screen-game" class="screen">
     <div class="hud">
       <div class="hud-box hearts">
-        <span class="hud-label">Hearts</span>
-        <div class="hud-value" id="hud-hearts">❤❤❤</div>
+        <span class="hud-label">Lives</span>
+        <div class="hud-value" id="hud-hearts">
+          <img class="life-icon" src="assets/life/life.png" alt="life">
+          <img class="life-icon" src="assets/life/life.png" alt="life">
+          <img class="life-icon" src="assets/life/life.png" alt="life">
+        </div>
       </div>
       <div class="hud-box timer">
         <span class="hud-label">Time</span>
@@ -89,7 +93,7 @@
       <p id="clear-msg">Mission complete.</p>
       <div class="results">
         <div><span>Score</span> <b id="res-score">0</b></div>
-        <div><span>Hearts Left</span> <b id="res-hearts">3</b></div>
+        <div><span>Lives Left</span> <b id="res-hearts">3</b></div>
         <div><span>Time Left</span> <b id="res-time">0</b></div>
       </div>
       <button id="btn-next" class="btn btn-primary">NEXT LEVEL</button>
@@ -102,7 +106,7 @@
   <div id="screen-gameover" class="screen overlay-screen">
     <div class="panel">
       <h2 id="go-title">GAME OVER</h2>
-      <p id="go-msg">You ran out of time or hearts.</p>
+      <p id="go-msg">You ran out of time or lives.</p>
       <div class="results">
         <div><span>Final Score</span> <b id="res-final-score">0</b></div>
       </div>
