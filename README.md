@@ -87,7 +87,16 @@ Thingyan Mayhem is a playful, fast-tapping arcade game inspired by the Thingyan 
 
 ## 🎨 Art & Audio
 
-All visuals in this MVP are **programmatic placeholder art** drawn with Canvas 2D (colored shapes, faces, water drops, splash particles). Replace `drawCharacter()` in `js/characters.py` with your own illustrated sprites before final submission.
+Character sprites are loaded from `assets/<character>/walk_1.png` and `walk_2.png` (e.g. `assets/man_red/walk_1.png`). The kid also has a `wet.png` reaction frame.
+
+### Adding a stage/background image
+
+Drop a portrait background image at **`assets/background.png`** (recommended size ~420 × 844, or any 9:16-ish portrait ratio). It is scaled to "cover" the play area and centered, so it will not stretch.
+
+- If the file is missing, the game automatically falls back to the drawn gradient + platform colors.
+- To use a different filename or format (e.g. `.jpg`), change `BACKGROUND_IMAGE_SRC` near the top of `js/game.js`.
+
+All other visuals (water drops, splashes, player gun) are drawn with Canvas 2D.
 
 Audio uses the Web Audio API for simple synthesized tones (no external audio files).
 

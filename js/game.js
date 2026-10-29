@@ -74,6 +74,28 @@ function resizeCanvas() {
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
+// ---------- Stage background image ----------
+// Drop your stage/background art at assets/background.png (see README → Art & Audio).
+// Recommended: a portrait image, e.g. 420x844 (or any 9:16-ish size).
+// It is scaled to "cover" the play area and centered, so it never stretches.
+const BACKGROUND_IMAGE_SRC = 'assets/background.png';
+const backgroundImg = new Image();
+let backgroundImgLoaded = false;
+backgroundImg.onload = () => { backgroundImgLoaded = true; };
+backgroundImg.onerror = () => { backgroundImgLoaded = false; };
+backgroundImg.src = BACKGROUND_IMAGE_SRC;
+
+// Draw an image so it covers the whole canvas without distorting (like CSS cover)
+function drawCoverImage(image, w, h) {
+  const iw = image.width;
+  const ih = image.height;
+  if (!iw || !ih) return;
+  const scale = Math.max(w / iw, h / ih);
+  const dw = iw * scale;
+  const dh = ih * scale;
+  ctx.drawImage(image, (w - dw) / 2, (h - dh) / 2, dw, dh);
+}
+
 // ---------- Audio ----------
 function playSound(type) {
   try {
@@ -416,18 +438,22 @@ function loop(t) {
   // ---------- Draw ----------
   ctx.clearRect(0, 0, W, H);
 
-  // Stage background
-  const grad = ctx.createLinearGradient(0, 0, W, H);
-  grad.addColorStop(0, '#fdf3c7');
-  grad.addColorStop(1, '#e8e2d3');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, W, H);
+  // Stage background — custom image if provided, otherwise the drawn fallback
+  if (backgroundImgLoaded) {
+    drawCoverImage(backgroundImg, W, H);
+  } else {
+    const grad = ctx.createLinearGradient(0, 0, W, H);
+    grad.addColorStop(0, '#fdf3c7');
+    grad.addColorStop(1, '#e8e2d3');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
 
-  // Stage platform
-  ctx.fillStyle = '#d9c49a';
-  ctx.fillRect(0, H * 0.82, W, H * 0.18);
-  ctx.fillStyle = '#c7b299';
-  ctx.fillRect(0, H * 0.82, W, 5);
+    // Stage platform
+    ctx.fillStyle = '#d9c49a';
+    ctx.fillRect(0, H * 0.82, W, H * 0.18);
+    ctx.fillStyle = '#c7b299';
+    ctx.fillRect(0, H * 0.82, W, 5);
+  }
 
   // Draw player/thrower character
   try {
