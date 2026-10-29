@@ -75,10 +75,10 @@ window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
 // ---------- Stage background image ----------
-// Drop your stage/background art at assets/background.png (see README → Art & Audio).
+// Drop your stage/background art at assets/background.jpg (see README → Art & Audio).
 // Recommended: a portrait image, e.g. 420x844 (or any 9:16-ish size).
 // It is scaled to "cover" the play area and centered, so it never stretches.
-const BACKGROUND_IMAGE_SRC = 'assets/background.png';
+const BACKGROUND_IMAGE_SRC = 'assets/background.jpg';
 const backgroundImg = new Image();
 let backgroundImgLoaded = false;
 backgroundImg.onload = () => { backgroundImgLoaded = true; };

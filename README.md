@@ -91,10 +91,11 @@ Character sprites are loaded from `assets/<character>/walk_1.png` and `walk_2.pn
 
 ### Adding a stage/background image
 
-Drop a portrait background image at **`assets/background.png`** (recommended size ~420 × 844, or any 9:16-ish portrait ratio). It is scaled to "cover" the play area and centered, so it will not stretch.
+Drop a portrait background image at **`assets/background.jpg`** (recommended size ~420 × 844, or any 9:16-ish portrait ratio). It is scaled to "cover" the play area and centered, so it will not stretch.
 
+- `.jfif` / `.jpeg` files are just JPEGs — rename or copy them to `background.jpg` (or change `BACKGROUND_IMAGE_SRC` to point at your file).
 - If the file is missing, the game automatically falls back to the drawn gradient + platform colors.
-- To use a different filename or format (e.g. `.jpg`), change `BACKGROUND_IMAGE_SRC` near the top of `js/game.js`.
+- To use a different filename or format (e.g. `.png`), change `BACKGROUND_IMAGE_SRC` near the top of `js/game.js`.
 
 All other visuals (water drops, splashes, player gun) are drawn with Canvas 2D.
 
