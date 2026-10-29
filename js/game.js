@@ -157,20 +157,20 @@ function spawnPedestrian() {
 }
 
 function addWaterDrop(tx, ty) {
-  // Start from stage bottom center
-  const sx = W / 2;
-  const sy = H * 0.82 - 10;
+  // Start from player bucket position
+  const sx = W / 2 + 20;
+  const sy = H * 0.82 - 40;
   const dx = tx - sx;
   const dy = ty - sy;
   const dist = Math.hypot(dx, dy);
-  const speed = 12;
+  const speed = 16;
   waterDrops.push({
     x: sx,
     y: sy,
     targetX: tx,
     targetY: ty,
     vx: (dx / dist) * speed,
-    vy: (dy / dist) * speed,
+    vy: (dy / dist) * speed - 2, // slight arc
     life: 1.0,
     arrived: false,
   });
@@ -411,7 +411,7 @@ function loop(t) {
   for (const d of waterDrops) {
     if (d.arrived) continue;
     const angle = Math.atan2(d.vy, d.vx);
-    drawWaterDrop(ctx, d.x, d.y, 8, angle);
+    drawWaterDrop(ctx, d.x, d.y, 10, angle);
   }
 
   // Draw pedestrians

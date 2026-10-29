@@ -226,17 +226,29 @@ function drawWaterDrop(ctx, x, y, size, angle) {
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(angle);
-  ctx.fillStyle = '#72c3dc';
+  // Main droplet with gradient-like effect
+  const grad = ctx.createRadialGradient(0, -size * 0.4, size * 0.1, 0, 0, size * 1.4);
+  grad.addColorStop(0, '#9fd8ee');
+  grad.addColorStop(0.6, '#5fbcd3');
+  grad.addColorStop(1, '#3a9fb8');
+  ctx.fillStyle = grad;
   ctx.beginPath();
-  ctx.moveTo(0, -size * 1.6);
-  ctx.bezierCurveTo(-size * 0.9, -size * 0.6, -size * 1.4, size * 0.4, 0, size * 1.4);
-  ctx.bezierCurveTo(size * 1.4, size * 0.4, size * 0.9, -size * 0.6, 0, -size * 1.6);
+  ctx.moveTo(0, -size * 1.8);
+  ctx.bezierCurveTo(-size * 1.0, -size * 0.7, -size * 1.6, size * 0.5, 0, size * 1.6);
+  ctx.bezierCurveTo(size * 1.6, size * 0.5, size * 1.0, -size * 0.7, 0, -size * 1.8);
   ctx.fill();
   // highlight
+  ctx.fillStyle = 'rgba(255,255,255,0.9)';
+  ctx.beginPath();
+  ctx.arc(-size * 0.28, -size * 1.0, size * 0.22, 0, Math.PI * 2);
+  ctx.fill();
+  // small trailing bubble
+  ctx.globalAlpha = 0.6;
   ctx.fillStyle = '#ffffff';
   ctx.beginPath();
-  ctx.arc(-size * 0.25, -size * 0.9, size * 0.2, 0, Math.PI * 2);
+  ctx.arc(size * 0.15, -size * 0.6, size * 0.12, 0, Math.PI * 2);
   ctx.fill();
+  ctx.globalAlpha = 1;
   ctx.restore();
 }
 
