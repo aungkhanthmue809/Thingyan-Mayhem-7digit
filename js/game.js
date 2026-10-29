@@ -76,11 +76,11 @@ resizeCanvas();
 
 // ---------- Block background images ----------
 // Two separate backgrounds, one per block (see README → Art & Audio):
-//   assets/background-top.jpg    — top block (people walking)
+//   assets/background-top.png    — top block (people walking)
 //   assets/background-bottom.jpg — bottom block (player)
 // If either is missing, the single assets/background.jpg is used as a fallback;
 // if that is missing too, the drawn colours are used.
-const BACKGROUND_TOP_SRC = 'assets/background-top.jpg';
+const BACKGROUND_TOP_SRC = 'assets/background-top.png';
 const BACKGROUND_BOTTOM_SRC = 'assets/background-bottom.jpg';
 const BACKGROUND_FALLBACK_SRC = 'assets/background.jpg';
 

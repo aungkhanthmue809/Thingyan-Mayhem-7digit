@@ -95,7 +95,7 @@ The playfield has two separate background image slots — one per block:
 
 | Block | File to add | Recommended format |
 |-------|-------------|--------------------|
-| **Top** (people walking) | `assets/background-top.jpg` | Portrait **9:16** — e.g. `720 × 1280` or `1080 × 1920` |
+| **Top** (people walking) | `assets/background-top.png` | Portrait **9:16** — e.g. `940 × 1672` or `1080 × 1920` |
 | **Bottom** (player) | `assets/background-bottom.jpg` | Wide strip **~2.6:1** — e.g. `780 × 300` or `1040 × 400` |
 
 Each image is scaled to "cover" its block and centred, so it never stretches. Match the aspect ratio and keep the important part centred so cropping is not noticeable.
