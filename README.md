@@ -112,11 +112,11 @@ Progress is stored in `localStorage` under the key **`thingyanMayhem.progress.v1
 
 ## 👥 Team Profile
 
-- **Team Name:** [Your Team Name]
-- **Main Contact:** [Name] — [Email] — [Telegram Username]
-- **Team Members:** [Names & roles]
-- **Institution / Company / Independent / Student:** [ ]
-- **Registration ID:** [ ]
+- **Team Name:** ArmSIX
+- **Main Contact:** Aung Khant Hmue — aungkhanthmue809@gmail.com — @cheese_burgur
+- **Team Members:** Aung Khant Hmue(Programmer) and Ye Yint Hein(Programmer)
+- **Institution / Company / Independent / Student:** Student
+
 
 ---
 
