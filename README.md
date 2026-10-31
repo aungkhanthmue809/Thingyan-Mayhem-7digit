@@ -5,8 +5,8 @@
 **Platform:** Browser (HTML5 Canvas, CSS, JavaScript)  
 **Players:** Single-player  
 **Level:** Days Mode (4 days) + unlockable Endless Mode  
-**Team:** [Your Team Name]  
-**Main Contact:** [Your Name / Email / Telegram]
+**Team:** ArmSIX  
+
 
 ---
 
@@ -173,6 +173,6 @@ Audio uses the Web Audio API for simple synthesized tones (no external audio fil
 
 ---
 
-## 📜 License
+## License
 
 Created for the Digit7 Jam 2026. Game design and direction by the submitting team; code and visual assets AI-generated per `AI_USE_DECLARATION.md`.
