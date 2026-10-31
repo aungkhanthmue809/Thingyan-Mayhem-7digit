@@ -1,4 +1,4 @@
-# Technical Notes — Thingyan Mayhem (Level 1 MVP)
+# Technical Notes — Thingyan Mayhem 
 
 ## Compatibility
 - **Browsers:** Chrome, Edge, Firefox, Safari (current stable versions).
@@ -17,11 +17,7 @@
 - No crashes or freezes during normal play.
 
 ## Known Limitations (Level 1 MVP)
-- Only Level 1 ("First Splash") is implemented.
 - Character art is AI-generated (Google Gemini); see `AI_USE_DECLARATION.md` and `ASSET_CREDIT_LIST.md`.
 - Audio is code-synthesized (Web Audio API); no audio files are included.
-- Endless Mode, Levels 2–6, pause, and level select are planned but not yet built.
 - `assets/irrelevant/` (unused AI drafts) and `assets/buffer/` (working screenshots) are excluded from the shipped build.
 
-## Submission Version
-- Playable URL, ZIP, demo video, README, and repository all identify the same submitted version: **Level 1 MVP**.
