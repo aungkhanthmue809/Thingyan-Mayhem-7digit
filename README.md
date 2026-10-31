@@ -1,4 +1,4 @@
-# Thingyan Mayhem — Digit7 Jam Submission
+# Thingyan Mayhem — Digit7 Jam 
 
 **Working title:** Thingyan Mayhem  
 **Genre:** Fast-tapping target-selection arcade game  
