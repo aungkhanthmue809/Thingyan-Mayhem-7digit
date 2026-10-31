@@ -8,14 +8,15 @@
 </head>
 <body>
 
-  <!-- Title Screen -->
+  <!-- Title Screen — exactly three buttons -->
   <div id="screen-title" class="screen active">
     <div class="panel">
       <h1>THINGYAN<br>MAYHEM</h1>
       <p class="subtitle">HTML Arcade Game • Digit7 Jam</p>
-      <button id="btn-play" class="btn btn-primary">PLAY</button>
+      <button id="btn-start" class="btn btn-primary">START GAME</button>
       <button id="btn-how" class="btn btn-outline">HOW TO PLAY</button>
-      <p class="footnote">Tap targets in red shirts. Avoid the rest.</p>
+      <button id="btn-quit" class="btn btn-outline">QUIT GAME</button>
+      <p class="footnote">Tap the targets. Celebrate Thingyan!</p>
     </div>
   </div>
 
@@ -24,13 +25,54 @@
     <div class="panel">
       <h2>How to Play</h2>
       <ol class="how-list">
-        <li>Read the mission at the top.</li>
-        <li>Tap the matching people as they walk past.</li>
-        <li>Splashing <b>Busy Women &amp; Aunts</b> costs a life (3 lives, then game over).</li>
-        <li>Complete the mission before time runs out!</li>
+        <li>Tap a person on screen to throw water at them.</li>
+        <li>Read the mission bar at the top of the play area.</li>
+        <li><b class="mm" lang="my">အကြို</b> — warm-up: splash <b>20 people</b> in <b>20 seconds</b>. Only friendly neighbours appear.</li>
+        <li><b class="mm" lang="my">အကျ</b> — splash <b>6 men in red shirts</b>. Splashing busy women or aunts costs a life (3 lives).</li>
+        <li><b class="mm" lang="my">အကြတ်</b> — crowd challenge: splash <b>25 people</b> in <b>45 seconds</b>. Some walkers are faster.</li>
+        <li><b class="mm" lang="my">အတက်</b> — final celebration: splash <b>30 people</b> and reach a <b>5-person combo</b> in <b>60 seconds</b>. Chain splashes within 2.5 seconds to build a combo.</li>
+        <li><b>Endless Mode</b> — survive as long as you can. Splash everyone; anyone who walks past costs a life (<b>5 lives</b>). Every 20 splashes restores a life. Golden pedestrians are worth +5. Your best score is saved.</li>
+        <li>Complete all four days to unlock Endless Mode.</li>
       </ol>
       <button id="btn-back-menu" class="btn btn-outline">BACK</button>
-      <button id="btn-start-from-how" class="btn btn-primary">PLAY LEVEL 1</button>
+    </div>
+  </div>
+
+  <!-- Game Mode Selection -->
+  <div id="screen-mode" class="screen">
+    <div class="panel">
+      <h2>Choose a Mode</h2>
+      <p class="screen-sub">How do you want to play?</p>
+      <button id="btn-days" class="btn btn-primary mode-btn">
+        <span class="mode-title">DAYS MODE</span>
+        <span class="mode-sub">Play the four days of Thingyan</span>
+      </button>
+      <button id="btn-endless" class="btn btn-outline mode-btn locked">
+        <span class="mode-title"><span id="endless-lock" class="lock-icon">🔒</span> ENDLESS MODE</span>
+        <span id="endless-sub" class="mode-sub">Locked until all 4 days are complete</span>
+      </button>
+      <p id="mode-note" class="screen-note">Complete all 4 days to unlock Endless Mode.</p>
+      <button id="btn-back-mode" class="btn btn-outline">BACK</button>
+    </div>
+  </div>
+
+  <!-- Days Mode Level Selection -->
+  <div id="screen-levels" class="screen">
+    <div class="panel">
+      <h2>Days Mode</h2>
+      <p class="screen-sub">The four days of Thingyan</p>
+      <div id="level-list" class="level-list"></div>
+      <p id="levels-note" class="screen-note"></p>
+      <button id="btn-back-levels" class="btn btn-outline">BACK</button>
+    </div>
+  </div>
+
+  <!-- Quit confirmation (used when the platform cannot close the tab) -->
+  <div id="screen-quit" class="screen overlay-screen">
+    <div class="panel">
+      <h2>Quit Game</h2>
+      <p id="quit-msg" class="screen-sub">Thanks for playing! This browser can't close the tab for you — just close the tab to exit.</p>
+      <button id="btn-back-quit" class="btn btn-primary">BACK TO MENU</button>
     </div>
   </div>
 
@@ -53,6 +95,10 @@
         <span class="hud-label">Score</span>
         <div class="hud-value" id="hud-score">0</div>
       </div>
+      <div class="hud-box best">
+        <span class="hud-label">Best</span>
+        <div class="hud-value" id="hud-best">0</div>
+      </div>
       <div class="hud-box combo" id="hud-combo" style="display:none;">
         <span class="hud-label">Combo</span>
         <div class="hud-value">x<span id="combo-val">1</span></div>
@@ -61,11 +107,15 @@
 
     <div class="mission-bar">
       <div class="mission-text">
-        <span id="mission-desc">Splash <b class="target-word">6 children in red shirts</b></span>
+        <span id="mission-desc">Splash <b class="target-word">6 men in red shirts</b></span>
         <span class="mission-progress" id="mission-progress">0 / 6</span>
       </div>
       <div class="mission-meter">
         <div class="mission-fill" id="mission-fill"></div>
+      </div>
+      <div class="mission-text secondary" id="mission-row2" style="display:none;">
+        <span id="mission-desc2">Best Combo:</span>
+        <span class="mission-progress" id="mission-progress2">0 / 5</span>
       </div>
     </div>
 
@@ -82,36 +132,44 @@
       <h2>Paused</h2>
       <button id="btn-resume" class="btn btn-primary">RESUME</button>
       <button id="btn-restart-pause" class="btn btn-outline">RESTART LEVEL</button>
+      <button id="btn-levels-pause" class="btn btn-outline">BACK TO LEVELS</button>
       <button id="btn-menu-pause" class="btn btn-outline">MAIN MENU</button>
     </div>
   </div>
 
-  <!-- Level Clear -->
+  <!-- Level Clear / Victory -->
   <div id="screen-clear" class="screen overlay-screen">
     <div class="panel">
       <h2 id="clear-title">LEVEL CLEARED!</h2>
       <p id="clear-msg">Mission complete.</p>
       <div class="results">
+        <div id="res-people-row" style="display:none;"><span>People Splashed</span> <b id="res-people">0</b></div>
+        <div id="res-combo-row" style="display:none;"><span>Best Combo</span> <b id="res-combo">0 / 5</b></div>
         <div><span>Score</span> <b id="res-score">0</b></div>
-        <div><span>Lives Left</span> <b id="res-hearts">3</b></div>
+        <div id="res-hearts-row"><span>Lives Left</span> <b id="res-hearts">3</b></div>
         <div><span>Time Left</span> <b id="res-time">0</b></div>
       </div>
-      <button id="btn-next" class="btn btn-primary">NEXT LEVEL</button>
+      <p id="clear-unlock" class="unlock-banner" style="display:none;">🔓 Endless Mode unlocked!</p>
+      <button id="btn-next" class="btn btn-primary">CONTINUE</button>
       <button id="btn-retry-clear" class="btn btn-outline">RETRY</button>
-      <button id="btn-menu-clear" class="btn btn-outline">MAIN MENU</button>
+      <button id="btn-levels-clear" class="btn btn-outline">BACK TO LEVELS</button>
     </div>
   </div>
 
-  <!-- Game Over -->
+  <!-- Game Over / Failure -->
   <div id="screen-gameover" class="screen overlay-screen">
     <div class="panel">
       <h2 id="go-title">GAME OVER</h2>
       <p id="go-msg">You ran out of time or lives.</p>
       <div class="results">
         <div><span>Final Score</span> <b id="res-final-score">0</b></div>
+        <div id="res-survival-row" style="display:none;"><span>Survival Time</span> <b id="res-survival">0:00</b></div>
+        <div id="res-highscore-row" style="display:none;"><span>Best Score</span> <b id="res-highscore">0</b></div>
+        <div id="res-previous-row" style="display:none;"><span>Previous Best</span> <b id="res-previous">0</b></div>
       </div>
-      <button id="btn-retry-go" class="btn btn-primary">TRY AGAIN</button>
-      <button id="btn-menu-go" class="btn btn-outline">MAIN MENU</button>
+      <p id="go-record" class="unlock-banner" style="display:none;">🎉 New Record!</p>
+      <button id="btn-retry-go" class="btn btn-primary">RETRY</button>
+      <button id="btn-levels-go" class="btn btn-outline">BACK TO LEVELS</button>
     </div>
   </div>
 

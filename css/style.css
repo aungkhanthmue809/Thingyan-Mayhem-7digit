@@ -16,6 +16,8 @@
   --target-red: #e63946;
   --panel: rgba(255, 255, 255, 0.92);
   --shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  /* Myanmar Unicode font stack — used for the Burmese day names */
+  --font-mm: "Padauk", "Noto Sans Myanmar", "Myanmar Text", "Pyidaungsu", "Myanmar Sans Pro", sans-serif;
 }
 
 html, body {
@@ -24,7 +26,7 @@ html, body {
   overflow: hidden;
   touch-action: none;
   background: linear-gradient(180deg, var(--festive-yellow) 0%, var(--festive-orange) 100%);
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Padauk", "Noto Sans Myanmar", "Myanmar Text", "Pyidaungsu", sans-serif;
   color: var(--ink);
   -webkit-tap-highlight-color: transparent;
 }
@@ -54,12 +56,42 @@ canvas {
   backdrop-filter: blur(4px);
 }
 
+/* Main menu background image ------------------------------------------------
+   Drop your art at assets/menu-background.png (portrait 9:16 recommended,
+   e.g. 1080 x 1920). It is scaled to "cover" the whole screen and centred.
+   If the file is missing, assets/background-top.png is used instead, and if
+   that is missing too the plain stage colour shows. The dark gradient on top
+   keeps the menu text readable on bright artwork. The same art is reused on
+   the mode / level-selection / how-to-play screens so the menus feel like one
+   consistent set. */
+#screen-title,
+#screen-how,
+#screen-mode,
+#screen-levels {
+  background-color: var(--stage-bg);
+  background-image:
+    linear-gradient(180deg, rgba(12, 18, 28, 0.05) 0%, rgba(12, 18, 28, 0.40) 100%),
+    url("../assets/menu-background.png"),
+    url("../assets/background-top.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* Burmese day names always use a Myanmar-capable font */
+.mm {
+  font-family: var(--font-mm);
+}
+
 .panel {
   background: var(--panel);
   border-radius: 20px;
   padding: 28px 24px;
   width: 92%;
   max-width: 420px;
+  max-height: 94vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   text-align: center;
   box-shadow: var(--shadow);
   border: 2px solid #c7b299;
@@ -114,6 +146,136 @@ h2 {
   color: var(--soft);
 }
 
+/* Menu / mode / level selection ------------------------------------------- */
+.screen-sub {
+  color: var(--soft);
+  margin-bottom: 14px;
+  font-size: 0.95rem;
+}
+.screen-note {
+  margin: 12px 0 4px;
+  min-height: 1.5em;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.45;
+  color: var(--danger);
+}
+.screen-note.unlocked {
+  color: var(--accent);
+}
+.screen-note.shake {
+  animation: note-shake 0.4s ease-in-out;
+}
+@keyframes note-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+
+.mode-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.mode-title {
+  font-size: 1.15rem;
+  letter-spacing: 0.03em;
+}
+.mode-sub {
+  font-size: 0.78rem;
+  font-weight: 600;
+  opacity: 0.8;
+}
+.btn.locked {
+  opacity: 0.72;
+  border-style: dashed;
+}
+.lock-icon {
+  font-size: 1rem;
+  margin-right: 2px;
+}
+
+.level-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 16px 0 6px;
+}
+.level-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  background: #fff;
+  border: 2px solid #c7b299;
+  border-radius: 14px;
+  text-align: left;
+  font-family: inherit;
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+}
+.level-card:active {
+  transform: scale(0.98);
+}
+.level-card.completed {
+  border-color: var(--accent);
+  background: #f2fbf9;
+}
+.level-card.locked {
+  opacity: 0.72;
+  background: #f4f4f4;
+}
+.level-num {
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--festive-yellow);
+  color: #7a4a00;
+  font-weight: 900;
+  font-size: 1.1rem;
+}
+.level-card.completed .level-num {
+  background: var(--accent);
+  color: #fff;
+}
+.level-card.locked .level-num {
+  background: #ddd;
+  color: #777;
+}
+.level-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+.level-name {
+  font-size: 1.25rem;
+  font-weight: 900;
+  line-height: 1.25;
+}
+.level-sub {
+  font-size: 0.8rem;
+  color: var(--soft);
+}
+.level-status {
+  font-size: 1.2rem;
+  font-weight: 900;
+}
+.level-status.done {
+  color: var(--accent);
+}
+.level-status.lock {
+  filter: grayscale(1);
+}
+
 .how-list {
   text-align: left;
   margin: 16px 0;
@@ -131,6 +293,34 @@ h2 {
   position: absolute;
   left: 0;
   top: -2px;
+}
+
+/* The How-to-Play list is long on phones: keep the BACK button pinned and
+   let only the instructions scroll. */
+#screen-how .panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#screen-how h2 {
+  flex: 0 0 auto;
+}
+#screen-how .how-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 8px 0;
+  padding-right: 4px;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+#screen-how .how-list li {
+  margin-bottom: 6px;
+}
+#screen-how .btn {
+  flex: 0 0 auto;
+  margin: 8px 0 0;
 }
 
 /* Gameplay HUD */
@@ -174,6 +364,32 @@ h2 {
   color: var(--danger);
 }
 
+/* HUD visibility per mode/level:
+   • hide-hearts — timed Days levels have no lives
+   • hide-combo  — levels without a combo objective
+   • show-best   — Endless Mode shows the saved high score */
+#screen-game.hide-hearts .hud-box.hearts,
+#screen-game.hide-combo .hud-box.combo {
+  display: none;
+}
+.hud-box.best {
+  display: none;
+}
+#screen-game.show-best .hud-box.best {
+  display: block;
+}
+#screen-game.show-best .hud-box.best .hud-value {
+  color: var(--accent);
+}
+
+/* On phones the pause button sits over the top-right of the HUD; reserve
+   space so it never covers the score box. */
+@media (max-width: 560px) {
+  .hud {
+    padding-right: 56px;
+  }
+}
+
 /* Life icons (silver pot with flowers) — 3 lives; lost ones greyed out */
 .life-icon {
   display: inline-block;
@@ -185,6 +401,13 @@ h2 {
 .life-lost {
   filter: grayscale(1);
   opacity: 0.3;
+}
+/* Compact life counter used by Endless Mode (up to 5 lives) */
+.heart-count {
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: var(--danger);
+  line-height: 1.1;
 }
 
 .mission-bar {
@@ -212,6 +435,24 @@ h2 {
 }
 .avoid-word {
   color: var(--soft);
+}
+.level-tag {
+  display: inline-block;
+  background: var(--festive-yellow);
+  color: #7a4a00;
+  border-radius: 999px;
+  padding: 1px 8px;
+  margin-right: 6px;
+  font-size: 0.85rem;
+  font-weight: 900;
+  vertical-align: middle;
+}
+.mission-text.secondary {
+  background: rgba(255, 255, 255, 0.78);
+}
+.mission-text.secondary .mission-progress {
+  color: var(--accent);
+  font-weight: 900;
 }
 .mission-progress {
   font-size: 0.95rem;
@@ -273,6 +514,51 @@ h2 {
 .results b {
   color: var(--ink);
   font-size: 1.1rem;
+}
+
+/* Special banners on result screens (Endless unlock / new high score) */
+.unlock-banner {
+  margin: 4px 0 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #e8f8f5;
+  border: 2px solid var(--accent);
+  color: #146b60;
+  font-weight: 900;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+/* Victory panel: the Burmese festival title can wrap onto several lines.
+   Keep it compact so the results and all three buttons fit on short
+   phones (e.g. 360 x 640) without the panel scrolling. */
+#screen-clear .panel {
+  padding: 20px 18px;
+}
+#clear-title {
+  font-size: 1.3rem;
+  line-height: 1.35;
+  margin-bottom: 8px;
+}
+#clear-msg {
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: var(--soft);
+}
+#screen-clear .results {
+  margin: 10px 0;
+  font-size: 0.92rem;
+}
+#screen-clear .results div {
+  padding: 4px 0;
+}
+#screen-clear .unlock-banner {
+  margin: 2px 0 6px;
+  padding: 8px 10px;
+  font-size: 0.92rem;
+}
+#screen-clear .btn {
+  margin: 7px 0;
 }
 
 /* Responsive canvas */

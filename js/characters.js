@@ -90,17 +90,27 @@ loadTemplateWalkFrames('kid', ['assets/kid/walk_1.png', 'assets/kid/walk_2.png']
 // Load wet (soaked) reaction frame for the kid
 loadTemplateWetFrame('kid', 'assets/kid/wet.png');
 
-function pickTemplate() {
-  // Weighted: more targets than hazards/distractors for a fair feel
+function pickTemplate(excludeIds) {
+  // Weighted: more targets than hazards/distractors for a fair feel.
+  // Optional excludeIds lets a level spawn only a subset of characters
+  // (e.g. Day 1 has no busy women or aunts).
+  const excluded = excludeIds || [];
   const weights = [4, 2, 2, 2, 2, 3];
+  const pool = [];
   let total = 0;
-  for (const w of weights) total += w;
-  let r = Math.random() * total;
   for (let i = 0; i < CHAR_TEMPLATES.length; i++) {
-    r -= weights[i];
-    if (r <= 0) return CHAR_TEMPLATES[i];
+    if (excluded.includes(CHAR_TEMPLATES[i].id)) continue;
+    pool.push({ template: CHAR_TEMPLATES[i], weight: weights[i] });
+    total += weights[i];
   }
-  return CHAR_TEMPLATES[0];
+  if (!pool.length) return CHAR_TEMPLATES[0];
+
+  let r = Math.random() * total;
+  for (const entry of pool) {
+    r -= entry.weight;
+    if (r <= 0) return entry.template;
+  }
+  return pool[0].template;
 }
 
 function pickTemplateById(id) {
